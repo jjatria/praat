@@ -296,6 +296,36 @@ endproc
 
 #! ~~~ params
 #! in:
+#!   .got: >
+#!     The number to test
+#!   .expected: >
+#!     The expected number
+#!   .margin: >
+#!     The acceptable threshold
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if both numbers are within specified margin.
+#!
+procedure is_approx: .got, .expected, .margin, .msg$
+  @_start_test()
+
+  if .got <= (.expected + .margin) and .got >= (.expected - .margin)
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "       got: " + string$(.got)
+      @diag: "  expected: " + string$(.expected) + " +- " + string$(.margin)
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
 #!   .msg$: >
 #!     A message to print
 #! ~~~
