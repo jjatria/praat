@@ -1,15 +1,19 @@
-echo Checking code updates...
+include test/more.proc
 
-code$ < ../dwtools/Strings_extensions.cpp
-assert not index (code$, "Get string...")   ; 2012-08-11
+@no_plan()
 
-code$ < ../external/GSL/Makefile
-assert not index (code$, "CFLAGS")   ; 2012-08-08
+@diag: "Checking code updates..."
 
-code$ < ../dwsys/regularexp.cpp
-assert not index (code$, "'0' }")   ; 2012-08-07
+code$ = readFile$: "../dwtools/Strings_extensions.cpp"
+@is_false: index (code$, "Get string..."), "2012-08-11"
 
-code$ < ../external/espeak/speak_lib.cpp
-assert not index (code$, "setlocale")   ; 2012-10-01
+code$ = readFile$: "../external/gsl/Makefile"
+@is_false: index (code$, "CFLAGS"), "2012-08-08"
 
-printline OK...
+code$ = readFile$: "../dwsys/regularExp.cpp"
+@is_false: index (code$, "'0' }"), "2012-08-07"
+
+code$ = readFile$: "../external/espeak/speak_lib.cpp"
+@is_false: index (code$, "setlocale"), "2012-10-01"
+
+@done_testing()
