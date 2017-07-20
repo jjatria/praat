@@ -1,0 +1,1226 @@
+# This script is part of the tap CPrAN plugin for Praat.
+# The latest version is available through CPrAN or at
+# <http://cpran.net/plugins/tap>
+#
+# The tap plugin is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# The tap plugin is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with selection. If not, see <http://www.gnu.org/licenses/>.
+#
+# Copyright 2015-2016 Jose Joaquin Atria
+
+#!
+#! # A test suite for Praat with diagnostics
+#!
+#! Unlike the procedures in `simple.proc`, these procedure implement
+#! testing interface for Praat modeled after the Test::More Perl module.
+#! With it, diagnostics for failing tests can be obtained, making error
+#! reports a bit more informative.
+#!
+#! If you already use the procedures in `simple.proc`, you can
+#! change into using these procedures without changing your code at all.
+#! You won't fully benefit from the procedures in this file, however,
+#! until you do make those changes.
+#!
+
+if !variableExists("diag.prefix$")
+  diag.prefix$ = "#   "
+endif
+
+#!
+#! # Procedure overrides
+#!
+
+#! ~~~ params
+#! in:
+#!   .value: >
+#!     A test value, interpreted as a boolean: `true` means success,
+#!     `false` means failure.
+#!   .name$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! out: Internally calls `@_testsimple_ok`
+#! ~~~
+#!
+#! The basic exposed test procedure. Failing tests will also be marked with
+#! an additional diagnostic line.
+#!
+procedure ok: .value, .name$
+  @_start_test()
+
+  @_testsimple_ok()
+
+  .todo$ = if ok.todo then "(TODO) " else "" fi
+  if !ok.value
+    @diag: "Failed " + .todo$ + "test '" + .name$ + "'"
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! out: Internally calls `@ok`.
+#! ~~~
+#!
+#! Test whether objects created during testing have been removed. The check
+#! is made by comparing the number of objects when the plan was specified
+#! to the number of objects when the test was called. If they are different,
+#! the test will fail.
+#!
+#! If the test fails, a list of the objects remaining in the list will be
+#! printed, with their names and ID numbers.
+#!
+procedure ok_selection ()
+  @_start_test()
+
+  select all
+  nocheck minusObject: plan.original
+  @_testsimple_saveSelection: "final_selection"
+  .current = '_testsimple_saveSelection.table'
+
+  @ok: plan.original_number == Object_'.current'.nrow,
+    ... "Removed all local objects"
+
+  if !ok.value
+    if plan.original_number > Object_'.current'.nrow
+      @_ok_objectExists: plan.original
+      if '_ok_objectExists.return'
+        @diag: "  these original objects are missing:"
+        for .i to Object_'plan.original'.nrow
+          .oid = Object_'plan.original'[.i, "id"]
+          .name$ = Object_'plan.original'$[.i, "id"] + ". " +
+            ... Object_'plan.original'$[.i, "type"]  + " "  +
+            ... Object_'plan.original'$[.i, "name"]
+
+          @_ok_objectExists: .oid
+          if !'_ok_objectExists.return'
+            @diag: "  - " + .name$
+          endif
+        endfor
+      else
+        @diag: "  some original objects are missing"
+      endif
+    elsif plan.original_number < Object_'.current'.nrow
+      @_testsimple_restoreSelection: .current
+      @diag: "  these objects remain in the list:"
+
+      @_ok_objectExists: plan.original
+      if '_ok_objectExists.return'
+        @_testsimple_minusSelection: plan.original
+      endif
+
+      for .i to numberOfSelected()
+        @diag: "  - " + selected$(.i)
+      endfor
+    endif
+  endif
+
+  removeObject: .current
+
+  @_end_test()
+endproc
+
+# Disable includes to make tests self-contained
+# include ../../plugin_tap/procedures/simple.proc
+
+#! ~~~ params
+#! in:
+#!   .got$: >
+#!     The string to test
+#!   .expected$: >
+#!     The expected string
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if both strings are equal.
+#!
+procedure is$: .got$, .expected$, .msg$
+  @_start_test()
+
+  if .got$ == .expected$
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "       got: """      + .got$ + """"
+      @diag: "  expected: """ + .expected$ + """"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got: >
+#!     The number to test
+#!   .expected: >
+#!     The expected number
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if both numbers are equal.
+#!
+procedure is: .got, .expected, .msg$
+  @_start_test()
+
+  if .got == .expected
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "       got: " + string$(.got)
+      @diag: "  expected: " + string$(.expected)
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got$: >
+#!     The string to test
+#!   .expected$: >
+#!     The expected string
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if both strings are different.
+#!
+procedure isnt$: .got$, .expected$, .msg$
+  @_start_test()
+
+  if .got$ != .expected$
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "       got: """      + .got$ + """"
+      @diag: "  expected: anything else"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got: >
+#!     The number to test
+#!   .expected: >
+#!     The expected number
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if both numbers are different.
+#!
+procedure isnt: .got, .expected, .msg$
+  @_start_test()
+
+  if .got != .expected
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "       got: " + string$(.got)
+      @diag: "  expected: anything else"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got: >
+#!     The number to test
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if number is truthy
+#!
+procedure is_true: .got, .msg$
+  @_start_test()
+
+  if .got != undefined and .got
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "       got: " + string$(.got)
+      @diag: "  expected: a truthy value (non-zero)"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got: >
+#!     The number to test
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if both numbers are different.
+#!
+procedure is_false: .got, .msg$
+  @_start_test()
+
+  if .got != undefined and !.got
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "       got: " + string$(.got)
+      @diag: "  expected: a falsy value (zero)"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .msg$: >
+#!     A message to print
+#! ~~~
+#!
+#! Prints a message in a way that doesn't interfere with the TAP output. The
+#! passed message can be a multiline string.
+#!
+procedure diag: .msg$
+  .msg$ = .prefix$ + .msg$
+  .msg$ = replace_regex$(.msg$, newline$, newline$ + .prefix$, 0)
+  appendInfoLine: .msg$
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got$: >
+#!     The string to test
+#!   .pattern$: >
+#!     A regular expression pattern to match against
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if the string matches the pattern.
+#!
+procedure like: .got$, .pattern$, .msg$
+  @_start_test()
+
+  if index_regex(.got$, .pattern$)
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "                '" + .got$     + "'"
+      @diag: "  doesn't match /" + .pattern$ + "/"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got$: >
+#!     The string to test
+#!   .pattern$: >
+#!     A regular expression pattern to match against
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if the string does not match the pattern.
+#!
+procedure unlike: .got$, .pattern$, .msg$
+  @_start_test()
+
+  if !index_regex(.got$, .pattern$)
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "                '" + .got$     + "'"
+      @diag: "        matches /" + .pattern$ + "/"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got$: >
+#!     The string to test
+#!   .op$: >
+#!     An operator to use for comparison, as a string
+#!   .expected$: >
+#!     The expected string
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if comparing both strings with the specified operator results
+#! in a true value.
+#!
+procedure cmp_ok$: .got$, .op$, .expected$, .msg$
+  @_start_test()
+
+  if .got$ '.op$' .expected$
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "  '" + .got$      + "'"
+      @diag: "      " + .op$
+      @diag: "  '" + .expected$ + "'"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .got: >
+#!     The number to test
+#!   .op$: >
+#!     An operator to use for comparison, as a string
+#!   .expected: >
+#!     The expected number
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if comparing both numbers with the specified operator results
+#! in a true value.
+#!
+procedure cmp_ok: .got, .op$, .expected, .msg$
+  @_start_test()
+
+  if .got '.op$' .expected
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "  '" + string$(.got)      + "'"
+      @diag: "      " + .op$
+      @diag: "  '" + string$(.expected) + "'"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .id: >
+#!     The ID of an object
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if the specified ID represents an object that exists in the
+#! Object list.
+#!
+procedure ok_exists: .id, .msg$
+  @_start_test()
+
+  @_ok_objectExists: .id
+
+  if '_ok_objectExists.return'
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "  object '" + string$(.id) + "' doesn't exist"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .id: >
+#!     The ID of an object
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if the specified ID does not represent any object that exists in
+#! the Object list.
+#!
+procedure no_object: .id, .msg$
+  @_start_test()
+
+  @_ok_objectExists: .id
+
+  if !'_ok_objectExists.return'
+    @pass: .msg$
+  else
+    @fail: .msg$
+    if !ok.value
+      @diag: "  object '" + string$(.id) + "' exists"
+    endif
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .id: >
+#!     The ID of an object
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if the specified ID represents a currently selected object.
+#!
+procedure ok_selected: .id, .msg$
+  @_start_test()
+
+  @_ok_objectExists: .id
+
+  if '_ok_objectExists.return'
+    @_ok_isSelected: .id
+    if '_ok_isSelected.return'
+      @pass: .msg$
+    else
+      @fail: .msg$
+      if !ok.value
+        @diag: "  object '" + string$(.id) + "' is not selected"
+      endif
+    endif
+  else
+    @ok_exists: 0, .msg$
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .id: >
+#!     The ID of an object
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if the specified ID does not represent any currently selected
+#! object.
+#!
+procedure ok_unselected: .id, .msg$
+  @_start_test()
+
+  @_ok_objectExists: .id
+
+  if '_ok_objectExists.return'
+    @_ok_isSelected: .id
+    if !'_ok_isSelected.return'
+      @pass: .msg$
+    else
+      @fail: .msg$
+      if !ok.value
+        @diag: "  object '" + string$(.id) + "' is selected"
+      endif
+    endif
+  else
+    @ok_exists: 0, .msg$
+  endif
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .a: >
+#!     The ID of an object
+#!   .b: >
+#!     The ID of another object
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Test passes if the objects represented by both IDs are identical.
+#!
+procedure is_deeply: .a, .b, .msg$
+  @_start_test()
+
+  .result = undefined
+
+  .n = numberOfSelected()
+  for .i to .n
+    .id[.n] = selected(.i)
+  endfor
+
+  .adiag$ = string$(.a)
+  .bdiag$ = string$(.b)
+
+  @_ok_objectExists: .a
+  if !'_ok_objectExists.return'
+    .result = 0
+    .aexists = 0
+    .adiag$ = "'" + .adiag$ + "'"
+  else
+    selectObject: .a
+    .aexists = 1
+    .adiag$ = .adiag$ + ". " + selected$()
+  endif
+
+  @_ok_objectExists: .b
+  if !'_ok_objectExists.return'
+    .result = 0
+    .bexists = 0
+    .bdiag$ = "'" + .bdiag$ + "'"
+  else
+    selectObject: .b
+    .bexists = 1
+    .bdiag$ = .bdiag$ + ". " + selected$()
+  endif
+
+  if .result == undefined
+    if objectsAreIdentical(.a, .b)
+      @pass: .msg$
+    else
+      @fail: .msg$
+      if !ok.value
+        @diag: "      objects"
+        @diag: "  " + .adiag$
+        @diag: "      and"
+        @diag: "  " + .bdiag$
+        @diag: "      are not the same"
+      endif
+    endif
+  else
+    @fail: .msg$
+    if !ok.value
+      if !.aexists and !.bexists
+        @diag: "      neither object"
+        @diag: "  " + .adiag$
+        @diag: "      nor object"
+        @diag: "  " + .bdiag$
+        @diag: "      exist"
+      elsif .aexists
+        @diag: "  " + .adiag$
+        @diag: "      exists but"
+        @diag: "  " + .bdiag$
+        @diag: "      doesn't"
+      else
+        @diag: "  " + .adiag$
+        @diag: "      doesn't exist but"
+        @diag: "  " + .bdiag$
+        @diag: "      does"
+      endif
+    endif
+  endif
+
+  nocheck selectObject: undefined
+  for .i to .n
+    plusObject: .id[.n]
+  endfor
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Automatically pass a test with the specified message.
+#!
+procedure pass: .msg$
+  @_start_test()
+  @ok: 1, .msg$
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .msg$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! ~~~
+#!
+#! Automatically fail a test with the specified message.
+#!
+procedure fail: .msg$
+  @_start_test()
+  @ok: 0, .msg$
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! in:
+#!   .why$: >
+#!     The reason to abort the test suite.
+#! ~~~
+#!
+#! An alias for @bail_out, to more closely mimic the Test::More API.
+#!
+#! Abort all tests in case of some critical failure. Only argument is
+#! the reason why the test suite is aborted.
+#!
+procedure BAIL_OUT: .why$
+  @bail_out: .why$
+endproc
+
+#! ~~~ params
+#! in:
+#!   .id: >
+#!     The ID of an object to test
+#! out:
+#!   .return: >
+#!     The result of the test.
+#! internal: true
+#! ~~~
+#!
+#! Returns true if the object exists, false otherwise.
+#!
+#! Copied from "selection" plugin to limit dependencies
+#!
+procedure _ok_objectExists (.id)
+  .start = numberOfSelected()
+  nocheck plusObject: .id
+  .plus = numberOfSelected()
+  nocheck minusObject: .id
+  .minus = numberOfSelected()
+
+  if .plus = .minus
+    # Object does not exist
+    .return = 0
+  else
+    .return = 1
+    if .start < .plus
+      minusObject: .id
+    else
+      plusObject: .id
+    endif
+  endif
+endproc
+
+#! ~~~ params
+#! in:
+#!   .id: >
+#!     The ID of an object to test
+#! out:
+#!   .return: >
+#!     The result of the test.
+#! internal: true
+#! ~~~
+#!
+#! Returns true if the object is selected, false otherwise.
+#!
+#! Copied from "selection" plugin to limit dependencies
+#!
+procedure _ok_isSelected (.id)
+  .n = numberOfSelected()
+  .return = 0
+  for .i to .n
+    if selected(.i) == .id
+      .return = 1
+      .i += .n
+    endif
+  endfor
+endproc
+
+#
+# Begin contents of simple.proc
+#
+
+# This script is part of the tap CPrAN plugin for Praat.
+# The latest version is available through CPrAN or at
+# <http://cpran.net/plugins/tap>
+#
+# The tap plugin is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# The tap plugin is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with selection. If not, see <http://www.gnu.org/licenses/>.
+#
+# Copyright 2015-2016 Jose Joaquin Atria
+
+ok.level = 0
+if !variableExists("test.fatal")
+  test.fatal = 0
+endif
+
+#!
+#! # A simple test suite for Praat
+#!
+#! These procedure implement a simple testing interface for Praat
+#! producing TAP output. The interface is closely modeled after that
+#! in the Test::Simple Perl module.
+#!
+#! For a more sophisticated interface, with better diagnostics for
+#! failing tests, see the `more.proc` file in this plugin.
+#!
+
+#!
+#! # Planning procedures
+#!
+
+#! ~~~ params
+#! in:
+#!   .total_tests: >
+#!     The total number of planned tests, or `undefined` if not known.
+#! out:
+#!   ok_selection.original: >
+#!     The number of originally selected objects, for use in selection
+#!     tests.
+#!   .current_plan: >
+#!     The current test plan.
+#!   .test: >
+#!     The indexed variable of the current test. Initialised here to `0`.
+#!   .skip: >
+#!     A boolean flag to save SKIP state. Initialised here to `false`.
+#!   .todo: >
+#!     A boolean flag to save TODO state. Initialised here to `false`.
+#! ~~~
+#!
+#! Plan a test suite.
+#!
+procedure plan: .total_tests
+  if variableExists("plan.current_plan")
+    exitScript: "Already running a test plan"
+  endif
+
+  @_testsimple_saveSelection: "backup_selection"
+  .bkp = '_testsimple_saveSelection.table'
+
+  select all
+  minusObject: .bkp
+
+  .original_number = numberOfSelected()
+  @_testsimple_saveSelection: "original_selection"
+  .original = '_testsimple_saveSelection.table'
+
+  @_testsimple_restoreSelection: .bkp
+  removeObject: .bkp
+
+  if .total_tests != undefined
+    appendInfoLine: "1..", .total_tests
+  endif
+
+  .current_plan = .total_tests
+  .test = 0
+  .skip = 0
+  .todo = 0
+endproc
+
+#! ~~~ params
+#! out: Internally calls `@plan`.
+#! ~~~
+#!
+#! Explicitly declare an undefined number of tests. Printing of the plan
+#! is deferred until `@done_testing` is called.
+#!
+procedure no_plan ()
+  @plan: undefined
+endproc
+
+#! ~~~ params
+#! ~~~
+#!
+#! Mark a plan as completed. If a plan has been defined (with `@plan`)
+#! or explicitly marked as undefined (with `@no_plan`), the test suite is
+#! complete. It is an error to complete a plan that does not exist.
+#!
+procedure done_testing ()
+  if !variableExists("plan.current_plan")
+    exitScript: "No test plan"
+  endif
+
+  nocheck removeObject: plan.original
+
+  if plan.total_tests == undefined
+    appendInfoLine: "1..", plan.test
+  else
+    if plan.test < plan.total_tests
+      exitScript: "Incomplete test suite"
+    endif
+  endif
+endproc
+
+#!
+#! # Testing procedures
+#!
+
+#! ~~~ params
+#! in:
+#!   .value: >
+#!     A test value, interpreted as a boolean: `true` means success,
+#!     `false` means failure.
+#!   .name$: >
+#!     The name of the test. A descriptive string with which to identify it.
+#! out: Internally calls `@_testsimple_ok`
+#! ~~~
+#!
+#! The basic exposed test procedure.
+#!
+procedure ok: .value, .name$
+  @_start_test()
+  @_testsimple_ok()
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! out:
+#!   ok.skip: >
+#!     Set to `true` if the test was skipped, `false` otherwise.
+#!   ok.todo: >
+#!     Set to `true` if the test was marked as TODO, `false` otherwise.
+#!   ok.value: >
+#!     The return value of the test.
+#!   plan.test: >
+#!     The index of the test. Each call to this procedure increments this
+#!     variable.
+#! ~~~
+#!
+#! The basic logic for the test procedure. Takes a boolean value and prints
+#! a TAP-compliant result based on its value. The SKIP and TODO states are
+#! read from `plan.skip` and `plan.todo` respectively, which are set in
+#! `@skip`, `@skip_all`, and `@end_skip` for SKIP, and `@todo` and
+#! `@end_todo` for TODO.
+#!
+procedure _testsimple_ok ()
+  if !variableExists("plan.current_plan")
+    exitScript: "No test plan"
+  endif
+
+  ok.skip = 0
+  ok.todo = 0
+
+  plan.test += 1
+
+  if plan.skip == undefined or plan.skip
+    plan.skip -= 1
+    ok.value = 1
+    ok.skip = 1
+  elsif plan.todo == undefined or plan.todo
+    plan.todo -= 1
+    ok.todo = 1
+  endif
+
+  if ok.value != undefined and ok.value
+    appendInfo: "ok " + string$(plan.test)
+  else
+    appendInfo: "not ok " + string$(plan.test)
+    ok.value = 0
+  endif
+
+  appendInfo: if !ok.skip and ok.name$ != "" then " - " + ok.name$ else "" fi
+  if ok.skip
+    appendInfoLine: " # SKIP " + skip.why$
+  elsif ok.todo
+    appendInfoLine: " # TODO " + todo.why$
+  else
+    appendInfoLine: ""
+    ok.todo$ = ""
+  endif
+endproc
+
+#! ~~~ params
+#! in:
+#!   .formula$: >
+#!     The formula to evaluate.
+#!   .name$: >
+#!     The name of the test.
+#! out: Internally calls `@ok` with the result of the formula as its value.
+#! ~~~
+#!
+#! Test a formula with `@ok`. The first argument is a string that will be
+#! interpreted as a formula. Formulas that evaluates to `true` will pass,
+#! and those that evaluate to `false` will fail.
+#!
+procedure ok_formula: .formula$, .name$
+  @_start_test()
+
+  if plan.skip != undefined and !plan.skip
+    .value = Calculator: .formula$
+  else
+    .value = 1
+  endif
+  @ok: .value, .name$
+
+  @_end_test()
+endproc
+
+#! ~~~ params
+#! out: Internally calls `@ok`.
+#! ~~~
+#!
+#! Test whether objects created during testing have been removed. The check
+#! is made by comparing the number of objects when the plan was specified
+#! to the number of objects when the test was called. If they are different,
+#! the test will fail.
+#!
+procedure ok_selection ()
+  @_start_test()
+
+  select all
+  nocheck minusObject: plan.original
+  @_testsimple_saveSelection: "final_selection"
+  .current = '_testsimple_saveSelection.table'
+
+  @ok: plan.original_number == Object_'.current'.nrow,
+    ... "Removed all local objects"
+
+  removeObject: .current
+
+  @_end_test()
+endproc
+
+#!
+#! # SKIP procedures
+#!
+
+#! ~~~ params
+#! in:
+#!   .how_many: >
+#!     The number of tests to skip.
+#!   .why$: >
+#!     The reason to skip them.
+#! out:
+#!   plan.skip: >
+#!     A counter of tests to skip.
+#! ~~~
+#!
+#! Mark a number of tests as tests to skip. A skipped test is a success
+#! regardless of the actual value of the test result.
+#!
+#! The first argument is the number of tests to skip. This number will be
+#! decremented with every test (with every call to `@ok`). The test suite
+#! will be in SKIP mode as long as this value is positive.
+#!
+#! Setting this value to `undefined` will mark all following tests as
+#! skipped tests, until the next call to `@end_skip`.
+#!
+#! Second argument is the reason why they are skipped, which is printed next
+#! to their name.
+#!
+procedure skip: .how_many, .reason$
+  if !variableExists("skip_all.keep_skipping")
+    plan.skip = .how_many
+    .why$ = .reason$
+  endif
+endproc
+
+#! ~~~ params
+#! in:
+#!   .why$: >
+#!     The reason to skip them.
+#! out:
+#!   .keep_skipping: >
+#!     Set to `true`, making future calls to `@end_skip` useless
+#! ~~~
+#!
+#! Mark **all** tests as skipped. Like calling `@skip` with an undefined
+#! value, this procedure marks an indeterminate number of tests as skipped
+#! tests. Unlike that method, however, this change is irreversible: all
+#! following tests will be skipped until the end of the suite.
+#!
+#! Only argument is the reason why tests are being skipped, which is
+#! printed next to their names.
+#!
+procedure skip_all: .why$
+  @skip: undefined, .why$
+  .keep_skipping = 1
+endproc
+
+#! ~~~ params
+#! out:
+#!   plan.skip: >
+#!     Set to `false` unless `@skip_all` has been called.
+#! ~~~
+#!
+#! End a SKIP block. SKIP blocks are started by calling `@skip` with
+#! an undefined number of tests to skip.
+#!
+procedure end_skip ()
+  if !variableExists("skip_all.keep_skipping")
+    plan.skip = 0
+  endif
+endproc
+
+#!
+#! # TODO procedures
+#!
+
+#! ~~~ params
+#! in:
+#!   .how_many: >
+#!     The number of tests to mark as TODO.
+#!   .why$: >
+#!     The reason to mark them as such.
+#! out:
+#!   plan.todo: >
+#!     A counter of TODO tests
+#! ~~~
+#!
+#! Mark a number of tests as _to-do_ tests. A _to-do_ test can fail
+#! without making the test suite a failure, but the actual value of the
+#! test will still be recorded. Passing a _to-do_ test is considered a
+#! bonus, and often reported by TAP consumers.
+#!
+#! The first argument is the number of tests to mark as _to-do_. This
+#! number will be decremented with every test (with every call to `@ok`).
+#! The test suite will be in TODO mode as long as this value is positive.
+#!
+#! Setting this value to `undefined` will mark all following tests as
+#! _to-do_ tests, until the next call to `@end_todo`.
+#!
+#! Second argument is the reason why they are _to-do_, which is printed
+#! next to their name.
+#!
+procedure todo: .how_many, .why$
+  if !variableExists("plan.skip") or !plan.skip
+    plan.todo = .how_many
+  endif
+endproc
+
+#! ~~~ params
+#! out:
+#!   plan.todo: >
+#!     Set to `false`.
+#! ~~~
+#!
+#! End a TODO block. TODO blocks are started by calling `@todo` with
+#! an undefined number of tests to mark as _to-do_.
+#!
+procedure end_todo ()
+  plan.todo = 0
+endproc
+
+#! ~~~ params
+#! in:
+#!   .why$: >
+#!     The reason to abort the test suite.
+#! ~~~
+#!
+#! Abort all tests in case of some critical failure. Only argument is
+#! the reason why the test suite is aborted.
+#!
+procedure bail_out: .why$
+  appendInfoLine: "Bail out! ", .why$
+  exitScript()
+endproc
+
+#! ~~~ params
+#! out:
+#!   .table: >
+#!     The ID of a selection table
+#! internal: true
+#! ~~~
+#!
+#! Save a selection as a selection table, compatible with those from the
+#! selection plugin.
+#!
+procedure _testsimple_saveSelection: .name$
+  .name$ = if .name$ == "" then "test_selection" else .name$ fi
+
+  .n = numberOfSelected()
+  for .i to .n
+    .id[.i] = selected(.i)
+  endfor
+  .table = Create Table with column names: .name$, 0,
+    ... "type name id"
+  for .i to .n
+    selectObject: .id[.i]
+    .type$ = extractWord$(selected$(), "")
+    .name$ = extractWord$(selected$(), " ")
+    selectObject: .table
+    Append row
+    Set string value:  Object_'.table'.nrow, "type", .type$
+    Set string value:  Object_'.table'.nrow, "name", .name$
+    Set numeric value: Object_'.table'.nrow, "id",   .id[.i]
+  endfor
+  nocheck selectObject: undefined
+  for .i to .n
+    plusObject: .id[.i]
+  endfor
+endproc
+
+#! ~~~ params
+#! in:
+#!   .id: >
+#!     The ID of a selection table
+#! internal: true
+#! ~~~
+#!
+#! Restore a saved selection table compatible with those from the
+#! selection plugin.
+#!
+procedure _testsimple_restoreSelection: .id
+  nocheck selectObject: undefined
+  for .i to Object_'.id'.nrow
+    nocheck plusObject: Object_'.id'[.i, "id"]
+  endfor
+endproc
+
+#! ~~~ params
+#! in:
+#!   .id: >
+#!     The ID of a selection table
+#! internal: true
+#! ~~~
+#!
+#! Subtract the contents of a selection table, compatible with those from
+#! the selection plugin, from the current selection.
+#!
+procedure _testsimple_minusSelection: .id
+  for .i to Object_'.id'.nrow
+    nocheck minusObject: Object_'.id'[.i, "id"]
+  endfor
+endproc
+
+#! ~~~ params
+#! internal: true
+#! ~~~
+#!
+#! Handle logic for starting a test
+#!
+procedure _start_test()
+  # Increase the test level, to allow for detection of top-level tests
+  ok.level += 1
+endproc
+
+#! ~~~ params
+#! internal: true
+#! ~~~
+#!
+#! Handle logic for ending a test
+#!
+procedure _end_test()
+  # Bail out if a top-level test failed while test.fatal was true
+  if test.fatal and !ok.todo and !ok.skip and !ok.value and ok.level == 1
+    @bail_out: "Test failed while test.fatal was enabled"
+  endif
+  ok.level -= 1
+endproc
