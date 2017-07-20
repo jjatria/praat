@@ -771,18 +771,6 @@ ENTER("espeak_Initialize");
 	// to something other than the default "C".  Then, not only Latin1 but also the
 	// other characters give the correct results with iswalpha() etc.
 
-/* 20121002djmw; Commented out, might interfere with setlocale in praat_init()
-#ifdef PLATFORM_RISCOS
-	setlocale(LC_CTYPE,"ISO8859-1");
-#else
-	if(setlocale(LC_CTYPE,"C.UTF-8") == NULL)
-	{
-		if(setlocale(LC_CTYPE,"UTF-8") == NULL)
-			if(setlocale(LC_CTYPE,"en_US.UTF-8") == NULL)
-				setlocale(LC_CTYPE,"");
-	}
-#endif
-*/
 	init_path(path);
 	initialise(options);
 	select_output(output_type);
