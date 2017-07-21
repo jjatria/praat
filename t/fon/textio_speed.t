@@ -1,32 +1,49 @@
+include ../test/more.proc
+
 # textioSpeed.praat
 # Paul Boersma, 2015-11-18
 
-echo Text I/O speed:
+@no_plan()
 
-for i to 33
-	sound'i' = Create Sound from formula... sound'i' Mono 0 10 44100 i
+@diag: "Text I/O speed:"
+
+outfile$ = "kanweg.Collection"
+total_objects = 10
+
+for i to total_objects
+   sound[i] = Create Sound from formula: string$(i), "Mono", 0, 5, 44100, "i"
 endfor
-select sound1
-for i from 2 to 33
-	plus sound'i'
+
+selectObject()
+for i to total_objects
+   plusObject: sound[i]
 endfor
-print writing:
+
 stopwatch
-Write to text file... kanweg.Collection
+Write to text file: outfile$
 t = stopwatch
-printline  't:3' seconds
+
+@diag: "Finished writing in 't:3' seconds"
 Remove
-print reading:
+
 stopwatch
-Read from file... kanweg.Collection
+Read from file: outfile$
 t = stopwatch
-printline  't:3' seconds
-assert numberOfSelected () = 33
-minus Sound sound30
+
+@diag: "Finished reading in 't:3' seconds"
+
+@is: numberOfSelected(), total_objects, "Recovered all objects from collection"
+
+n = round(total_objects / 2)
+id = selected(n)
+minusObject: id
 Remove
-select Sound sound30
-mean = Get mean... All 0 0
-assert mean = 30 ;   'mean'
+selectObject: id
+
+@is: do("Get mean...", "All", 0, 0), n, "Mean of generated objects"
 Remove
-deleteFile ("kanweg.Collection")
-printline OK
+deleteFile: outfile$
+
+@ok_selection()
+
+@done_testing()
