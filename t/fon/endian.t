@@ -2,8 +2,9 @@ include ../test/more.proc
 
 @no_plan()
 
+data_path$ = "data/"
 file_root$ = "test"
-outfile$ = file_root$ + ".out"
+outfile$ = data_path$ + file_root$ + ".out"
 sampling_frequency = 22050
 
 procedure test_format: .format$
@@ -17,14 +18,14 @@ endproc
 procedure test ()
    .reference = 0.00008397361
 
-   .sound = Read from file: file_root$ + ".wav"
+   .sound = Read from file: data_path$ + file_root$ + ".wav"
    .energy = Get energy in air
    @is_approx: .energy, .reference, 1e-11,
       ... "Correct energy from WAV (source)"
    removeObject: .sound
    .reference = .energy
 
-   .sound = Read from file: file_root$ + ".Sound"
+   .sound = Read from file: data_path$ + file_root$ + ".Sound"
    .energy = Get energy in air
    @is: .energy, .reference, "Correct energy from text file"
 
