@@ -1,121 +1,127 @@
-echo Endian...
-procedure do
-	Read from file... test.wav
-	energyInAir = Get energy in air
-	assert "'energyInAir:11'" = "0.00008397361"
+include ../test/more.proc
 
-	Read from file... test.Sound
-	energyInAir2 = Get energy in air
-	Remove
-	select Sound test
-	assert energyInAir2 = energyInAir
+@no_plan()
 
-	Write to WAV file... test2.wav
-	Remove
-	Read from file... test2.wav
-	energyInAir2 = Get energy in air
-	deleteFile ("test2.wav")
-	assert energyInAir2 = energyInAir
+file_root$ = "test"
+outfile$ = file_root$ + ".out"
+sampling_frequency = 22050
 
-	Write to AIFF file... test2.aiff
-	Remove
-	Read from file... test2.aiff
-	energyInAir2 = Get energy in air
-	deleteFile ("test2.aiff")
-	assert energyInAir2 = energyInAir
-
-	Write to FLAC file... test2.flac
-	Remove
-	Read from file... test2.flac
-	energyInAir2 = Get energy in air
-	deleteFile ("test2.flac")
-	assert energyInAir2 = energyInAir
-
-	Write to binary file... test2.bin
-	Remove
-	Read from file... test2.bin
-	energyInAir2 = Get energy in air
-	deleteFile ("test2.bin")
-	assert energyInAir2 = energyInAir
-
-	Write to Sesam file... test2.sdf
-	Remove
-	Read from file... test2.sdf
-	deleteFile ("test2.sdf")
-	energyInAir2 = Get energy in air
-	Write to Sesam file... test3.sdf
-	Remove
-	Read from file... test3.sdf
-	deleteFile ("test3.sdf")
-	energyInAir3 = Get energy in air
-	assert energyInAir3 = energyInAir2
-
-	Remove
-
-	Create Sound... test 0 100 22050 0.1 * randomGauss (0, 1)
-	for i to 2
-		stopwatch
-		Write to WAV file... kanweg.Sound
-		t1 = stopwatch
-		stopwatch
-		Write to AIFF file... kanweg.Sound
-		t2 = stopwatch
-		stopwatch
-		Write to binary file... kanweg.Sound
-		t3 = stopwatch
-		stopwatch
-		Write to FLAC file... kanweg.Sound
-		t4 = stopwatch
-		printline 't1:2' 't2:2' 't3:2' 't4:2'
-	endfor
-	Remove
-
-	Create Sound... test 0 1 22050 exp(-x*1000)
-	Write to binary file... kanweg.Sound
-	Read from file... kanweg.Sound
-	Formula... (self = Sound_test []) - 1
-	energyInAir = Get energy in air
-	assert energyInAir = 0
-	plus Sound test
-	Remove
-
-	Create Sound... test 0 1 22050 exp(x*1000)
-	Write to binary file... kanweg.Sound
-	Read from file... kanweg.Sound
-	Formula... (self = Sound_test []) - 1
-	energyInAir = Get energy in air
-	assert energyInAir = 0
-	plus Sound test
-	Remove
-	deleteFile ("kanweg.Sound")
-
-	Create TableOfReal... test 1 22050
-	Formula... exp(-col/22.05)
-	Write to binary file... kanweg.TableOfReal
-	Read from file... kanweg.TableOfReal
-	Formula... (self = TableOfReal_test []) - 1
-	norm = Get table norm
-	assert norm = 0
-	plus TableOfReal test
-	Remove
-
-	Create TableOfReal... test 1 22050
-	Formula... exp(col/22.05)
-	Write to binary file... kanweg.TableOfReal
-	Read from file... kanweg.TableOfReal
-	Formula... (self = TableOfReal_test []) - 1
-	norm = Get table norm
-	assert norm = 0
-	plus TableOfReal test
-	Remove
-	deleteFile ("kanweg.TableOfReal")
+procedure test_format: .format$
+   do("Write to '.format$' file...", outfile$)
+   Remove
+   Read from file: outfile$
+   .energy = Get energy in air
+   @is: .energy, test.reference, "Correct energy from " + .format$
 endproc
-printline Optimized:
-Debug... no 0
-call do
-printline Portable:
-Debug... no 18
-call do
-Debug... no 0
 
-printline OK
+procedure test ()
+   .reference = 0.00008397361
+
+   .sound = Read from file: file_root$ + ".wav"
+   .energy = Get energy in air
+   @is_approx: .energy, .reference, 1e-11,
+      ... "Correct energy from WAV (source)"
+   removeObject: .sound
+   .reference = .energy
+
+   .sound = Read from file: file_root$ + ".Sound"
+   .energy = Get energy in air
+   @is: .energy, .reference, "Correct energy from text file"
+
+   selectObject: .sound
+   @test_format: "WAV"
+   @test_format: "AIFF"
+   @test_format: "FLAC"
+   @test_format: "binary"
+   .sound = selected()
+
+   # Sesam files require the SDF extension
+   .sdf_file$ = outfile$ + ".sdf"
+   Write to Sesam file: .sdf_file$
+   removeObject: .sound
+   .sound = Read from file: .sdf_file$
+   .reference = Get energy in air
+
+   Write to Sesam file: .sdf_file$
+   removeObject: .sound
+   .sound = Read from file: .sdf_file$
+   .energy = Get energy in air
+   @is: .energy, .reference, "Sesam"
+   deleteFile: .sdf_file$
+
+   removeObject: .sound
+
+   @diag: "Sound writing speed tests (s)"
+   Create Sound: file_root$,
+      ... 0, 100, sampling_frequency, "0.1 * randomGauss(0, 1)"
+   @diag: "'tab$''tab$'WAV'tab$'AIFF'tab$'Binary'tab$'FLAC"
+   for .i to 2
+      stopwatch
+      Write to WAV file: outfile$
+      t1 = stopwatch
+
+      stopwatch
+      Write to AIFF file: outfile$
+      t2 = stopwatch
+
+      stopwatch
+      Write to binary file: outfile$
+      t3 = stopwatch
+
+      stopwatch
+      Write to FLAC file: outfile$
+      t4 = stopwatch
+
+      @diag: if .i == 1 then "First " else "Second" fi +
+         ... " run:'tab$''t1:2''tab$''t2:2''tab$''t3:2''tab$''t4:2'"
+   endfor
+   Remove
+
+   .formula$ = "exp(-x * 1000)"
+   Create Sound: file_root$,
+      ... 0, 1, sampling_frequency, .formula$
+   @null_test: .formula$, "Get energy in air"
+
+   .formula$ = "exp(x * 1000)"
+   Create Sound: file_root$,
+      ... 0, 1, sampling_frequency, .formula$
+   @null_test: .formula$, "Get energy in air"
+
+   .formula$ = "exp(-col / 22.05)"
+   Create TableOfReal: file_root$, 1, sampling_frequency
+   Formula: .formula$
+   @null_test: .formula$, "Get table norm"
+
+   .formula$ = "exp(col / 22.05)"
+   Create TableOfReal: file_root$, 1, sampling_frequency
+   Formula: .formula$
+   @null_test: .formula$, "Get table norm"
+endproc
+
+procedure null_test: .msg$, .query$
+   .source = selected()
+   .filename$ = file_root$ + ".obj"
+   Write to binary file: .filename$
+   .target = Read from file: .filename$
+   .name$ = replace$(selected$(), " ", "_", 0)
+   Formula: "(self = " + .name$ + " []) - 1"
+   .norm = do(.query$)
+   @is: .norm, 0, .msg$
+   removeObject: .source, .target
+   deleteFile: .filename$
+endproc
+
+@diag: "Optimized:"
+Debug: "no", 0
+@test()
+
+@diag: "Portable:"
+Debug: "no", 18
+@test()
+Debug: "no", 0
+
+deleteFile: outfile$
+
+@ok_selection()
+
+@done_testing()
