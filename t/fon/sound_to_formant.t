@@ -1,12 +1,26 @@
-# test/fon/Sound_to_Formant.praat
+include ../test/more.proc
+
+@no_plan()
+
+# t/fon/sound_to_formant.praat
 # Paul Boersma, 22 November 2011
 
 for i to 30
-	duration = randomUniform (0.001, 0.003)
-	windowDuration = randomUniform (0.002, 0.005)
-	samplingFrequency = randomUniform (16000, 96000)
-	sound = Create Sound from formula... test 1 0 duration samplingFrequency 1/2 * sin(2*pi*377*x) + randomGauss(0,0.1)
-	noprogress To Formant (burg)... 0.005 5 5500 windowDuration 50
-	plus sound
-	Remove
-endfor 
+   duration = randomUniform (0.001, 0.003)
+   window_duration = randomUniform (0.002, 0.005)
+   sampling_frequency = randomUniform (16000, 96000)
+
+   .sound = Create Sound from formula: "test", 1, 0,
+      ... duration, sampling_frequency,
+      ... "1 / 2 * sin(2 * pi * 377 * x) + randomGauss(0, 0.1)"
+   .formant = noprogress To Formant (burg): 0.005, 5, 5500, window_duration, 50
+
+   @pass: "'duration:3'-second sound " +
+      ... "at 'sampling_frequency' s/s " +
+      ... "and 'window_duration:3'-second window"
+   removeObject: .formant, .sound
+endfor
+
+@ok_selection()
+
+@done_testing()
