@@ -10,17 +10,21 @@ tex2 = Read from file: "kanweg.txt"
 @is_deeply: tex1, tex2, "Text file and chronological are identical"
 removeObject: tex1, tex2
 
+procedure test: .msg$
+  @is: numberOfSelected(), 0, .msg$
+endproc
+
 asserterror Found a number while looking for a string in text (line 10).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/number_for_string.TextGrid"
-@pass: "Number while looking for string"
+@test: "Number while looking for string"
 
 asserterror Found a number while looking for an enumerated value in text (line 6).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/number_for_enumerated.TextGrid"
-@pass: "Number while looking for enumerated value"
+@test: "Number while looking for enumerated value"
 
 asserterror Found a string while looking for a real number in text (line 13).
 ...'newline$'"xmax" not read.
@@ -28,7 +32,7 @@ asserterror Found a string while looking for a real number in text (line 13).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/string_for_number.TextGrid"
-@pass: "String while looking for real number"
+@test: "String while looking for real number"
 
 asserterror Found a string while looking for an integer in text (line 14).
 ...'newline$'Signed integer not read from text file.
@@ -36,13 +40,13 @@ asserterror Found a string while looking for an integer in text (line 14).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/string_for_integer.TextGrid"
-@pass: "String while looking for integer"
+@test: "String while looking for integer"
 
 asserterror Found a string while looking for an enumerated value in text (line 6).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/string_for_enumerated.TextGrid"
-@pass: "String while looking for enumerated_value"
+@test: "String while looking for enumerated_value"
 
 asserterror Found an enumerated value while looking for a string in text (line 18).
 ...'newline$'String "text" not read.
@@ -50,7 +54,7 @@ asserterror Found an enumerated value while looking for a string in text (line 1
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/enumerated_for_string.TextGrid"
-@pass: "Enumerated value while looking for string"
+@test: "Enumerated value while looking for string"
 
 asserterror Found an enumerated value while looking for a real number in text (line 17).
 ...'newline$'"xmax" not read.
@@ -58,7 +62,7 @@ asserterror Found an enumerated value while looking for a real number in text (l
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/enumerated_for_real.TextGrid"
-@pass: "Enumerated value while looking for real number"
+@test: "Enumerated value while looking for real number"
 
 asserterror Found an enumerated value while looking for an integer in text (line 14).
 ...'newline$'Signed integer not read from text file.
@@ -66,7 +70,7 @@ asserterror Found an enumerated value while looking for an integer in text (line
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/enumerated_for_integer.TextGrid"
-@pass: "Enumerated value while looking for integer"
+@test: "Enumerated value while looking for integer"
 
 asserterror Character x following quote (line 18). End of string or undoubled quote?
 ...'newline$'String "text" not read.
@@ -74,7 +78,7 @@ asserterror Character x following quote (line 18). End of string or undoubled qu
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/char_after_quote.TextGrid"
-@pass: "Character following quote"
+@test: "Character following quote"
 
 asserterror Early end of text detected while looking for a real number (line 21).
 ...'newline$'"xmax" not read.
@@ -82,13 +86,13 @@ asserterror Early end of text detected while looking for a real number (line 21)
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/early_end_for_real_xmax.TextGrid"
-@pass: "Early end of text while looking for real number"
+@test: "Early end of text while looking for real number"
 
 asserterror Early end of text detected while looking for an enumerated value (line 6).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/early_end_for_enumerated.TextGrid"
-@pass: "Early end of text while looking for enumerated value"
+@test: "Early end of text while looking for enumerated value"
 
 asserterror Early end of text detected while looking for an integer (line 14).
 ...'newline$'Signed integer not read from text file.
@@ -96,7 +100,7 @@ asserterror Early end of text detected while looking for an integer (line 14).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/early_end_for_integer.TextGrid"
-@pass: "Early end of text while looking for integer"
+@test: "Early end of text while looking for integer"
 
 asserterror Early end of text detected while looking for a string (line 18).
 ...'newline$'String "text" not read.
@@ -104,7 +108,7 @@ asserterror Early end of text detected while looking for a string (line 18).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/early_end_for_string.TextGrid"
-@pass: "Early end of text while looking for string"
+@test: "Early end of text while looking for string"
 
 asserterror Early end of text detected while looking for a real number (line 18).
 ...'newline$'"xmin" not read.
@@ -112,7 +116,7 @@ asserterror Early end of text detected while looking for a real number (line 18)
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/early_end_for_real_xmin.TextGrid"
-@pass: "Early end of text while looking for real number"
+@test: "Early end of text while looking for real number"
 
 asserterror Early end of text detected while reading a string (line 18).
 ...'newline$'String "text" not read.
@@ -120,31 +124,31 @@ asserterror Early end of text detected while reading a string (line 18).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/early_end_in_string.TextGrid"
-@pass: "Early end of text while reading string"
+@test: "Early end of text while reading string"
 
 asserterror Early end of text detected while reading an enumerated value (line 6).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/early_end_in_enumerated.TextGrid"
-@pass: "Early end of text while reading enumerated value"
+@test: "Early end of text while reading enumerated value"
 
 asserterror No matching '>' while reading an enumerated value (line 6).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/unmatched_bracket_in_enumerated.TextGrid"
-@pass: "Unmatched "">"" while reading enumerated value"
+@test: "Unmatched "">"" while reading enumerated value"
 
 asserterror Found strange text while reading an enumerated value in text (line 6).
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/strange_text_in_enumerated.TextGrid"
-@pass: "Strange text while reading enumerated value"
+@test: "Strange text while reading enumerated value"
 
 asserterror "exi" is not a value of the enumerated type.
 ...'newline$'TextGrid not read.
 ...'newline$'Data not read from text file
 Read from file: "texio/not_an_enumerated_value.TextGrid"
-@pass: "Not a value of enumerated type"
+@test: "Not a value of enumerated type"
 
 if windows
    asserterror Cannot open file “'defaultDirectory$'\texio\missing_file.TextGrid”.
