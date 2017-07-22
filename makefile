@@ -44,6 +44,9 @@ all:
 		external/glpk/libglpk.a external/gsl/libgsl.a \
 		$(LIBS)
 
+test:
+	$(PROVE)
+
 clean:
 	$(MAKE) -C external/gsl clean
 	$(MAKE) -C external/glpk clean

@@ -23,3 +23,5 @@ ICON =
 MAIN_ICON =
 
 INSTALL = install -p praat /usr/local/bin
+
+PROVE = prove --exec="./praat --run" --recurse --shuffle --timer

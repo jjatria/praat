@@ -21,3 +21,5 @@ AR = ar
 RANLIB = ls
 ICON =
 MAIN_ICON =
+
+PROVE = prove --exec="./praat --run" --recurse --shuffle --timer

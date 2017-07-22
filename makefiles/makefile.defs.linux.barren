@@ -23,3 +23,5 @@ ICON =
 MAIN_ICON =
 
 INSTALL = cp ./praat /usr/bin
+
+PROVE = prove --exec="./praat --run" --recurse --shuffle --timer

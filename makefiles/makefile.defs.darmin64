@@ -22,3 +22,5 @@ RANLIB = /mingw64/bin/ranlib
 WINDRES = /mingw64/bin/windres
 ICON = praat_win.o
 MAIN_ICON = main/praat_win.o
+
+PROVE = prove --exec="./praat --run" --recurse --shuffle --timer
