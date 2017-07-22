@@ -1,0 +1,4 @@
+These tests are designed to test aspects of the GUI that are
+not easy to test automatically. They are meant to be executed
+by a human on an instance of Praat with a GUI, so that their
+output can be visually evaluated.
