@@ -1,117 +1,127 @@
-echo arithmetic
+include ../test/more.proc
+
 # Paul Boersma, January 27, 2006
 
-assert 1 + 1 = 2
-assert 1 + undefined = undefined
-assert undefined + 4 = undefined
-assert undefined + undefined = undefined
+@no_plan()
 
-assert 5 * 6 = 30
-assert 5 * undefined = undefined
-assert undefined * 6 = undefined
-assert undefined * undefined = undefined
+@is: 1 + 1,                 2,         "Numeric addition"
+@is: 1 + undefined,         undefined, "Numeric added to undefined"
+@is: undefined + 4,         undefined, "Undefined added to number"
+@is: undefined + undefined, undefined, "Undefined addition"
 
-assert 30 / 5 = 6
-assert 5 / undefined = undefined
-assert undefined / 6 = undefined
-assert undefined / undefined = undefined
-assert 30 / 0 = undefined
-assert 30 div 0 = undefined
-assert 30 mod 0 = undefined
+@is: 5 * 6,                 30,        "Numeric multiplication"
+@is: 5 * undefined,         undefined, "Numeric multiplied by undefined"
+@is: undefined * 6,         undefined, "Undefined multiplied by numeric"
+@is: undefined * undefined, undefined, "Undefined multiplication"
 
-assert 19 - 7 = 12
-assert 19 - undefined = undefined
-assert undefined - 7 = undefined
-assert undefined - undefined = undefined
+@is: 30 / 5,                6,         "Numeric division"
+@is: 5 / undefined,         undefined, "Number divided by undefined"
+@is: undefined / 6,         undefined, "Undefined divided by numeric"
+@is: undefined / undefined, undefined, "Undefined division"
 
-# From the manual (Formulas 2. Operators):
+@is: 30 /   0,              undefined, "Division by zero"
+@is: 30 div 0,              undefined, "Integer division by zero"
+@is: 30 mod 0,              undefined, "Numeric modulo zero"
 
-assert --6 = 6
-assert 2^6 = 64
-assert 2^-6 = 0.015625
-assert -(1+1) ^6 = -64
-assert 4^3^2 = 262144
-assert 4^3 ^ 2 = 262144
-assert (4 ^ 3) ^ 2 = 4096
-assert (-2)^6 = 64
-assert -(2^6) = -64
-assert -(2)^6 = -64
-assert 1/4*5 = 1.25
-assert 1 / 4*5 = 1.25
-assert 1 / (4*5) = 0.05
-assert 3 * 2 ^ 4 = 48
-assert 3*2 ^ 4 = 48
-assert (3 * 2) ^ 4 = 1296
-assert 54 div 5 = 10
-assert 54 mod 5 = 4
-assert 54.3 div 5.1 = 10
-assert abs (54.3 mod 5.1 - 3.3) < 1e-12
-assert -54 div 5 = -11
-assert -(54 div 5) = -10
-assert -(54 mod 5) = -4
-assert 3 * 18 div 5 = 10
-assert 3 * (18 div 5) = 9
-assert 3 * 18 mod 5 = 4
-assert 3 * (18 mod 5) = 9
-assert 54 div 5 * 3 = 30
-assert 54 div (5 * 3) = 3
-assert 54 mod 5 * 3 = 12
-assert 54 mod (5 * 3) = 9
-assert 3 - 8 + 7 = 2
-assert 3 - (8 + 7) = -12
-assert 3 + 8 * 7 = 59
-assert (3 + 8) * 7 = 77
-assert 3 + - (2 ^ 4) = -13
-assert 3 + 5 / 2 + 3 = 8.5
-assert (3 + 5) / (2 + 3) = 1.6
+@is: 19 - 7,                12,        "Numeric subtraction"
+@is: 19 - undefined,        undefined, "Number minus undefined"
+@is: undefined - 7,         undefined, "Undefined minus number"
+@is: undefined - undefined, undefined, "Undefined subtraction"
 
-assert 1 + 1 = 2
-assert 1 + 1 < 3
-assert 1 + 1 <= 2
-assert 1 + 1 <= 3
-assert 1 + 1 > 1
-assert 1 + 1 >= 2
-assert 1 + 1 >= 1
+@diag: "From the manual (Formulas 2. Operators)"
 
-assert (5 + 6 = 10) = 0
-assert (5 + 6 = 11) = 1
-assert (5 + 6 <> 10) = 1
-assert (5 + 6 <> 11) = 0
-assert (5 + 6 < 10) = 0
-assert (5 + 6 < 11) = 0
-assert (5 + 6 > 10) = 1
-assert (5 + 6 > 11) = 0
-assert (5 + 6 <= 10) = 0
-assert (5 + 6 <= 11) = 1
-assert (5 + 6 >= 10) = 1
-assert (5 + 6 >= 11) = 1
-assert (not 5 + 6 = 10) = 1
-assert (not 5 + 6 = 11) = 0
+@is: --6,               6,    "Double negative"
+@is: 2^6,              64,    "Exponentiation (positive power)"
+@is: 2^-6,              0.015625, "Exponentiation (negative power)"
+@is: -(1+1) ^6,       -64,    "Exponentiation (negative base)"
+@is: 4^3^2,        262144,    "Multiple exponentiation"
+@is: 4^3 ^ 2,      262144,    "Whitespace between operators"
+@is: (4 ^ 3) ^ 2,    4096,    "Exponentiation: order of operations"
+@is: (-2)^6,           64,    ""
+@is: -(2^6),          -64,    ""
+@is: -(2)^6,          -64,    ""
+@is: 1/4*5,             1.25, "Multiplication of quotient (no whitespace)"
+@is: 1 / 4*5,           1.25, "Multiplication of quotient (whitespace)"
+@is: 1 / (4*5),         0.05, "Division: divisor is product"
+@is: 3 * 2 ^ 4,        48,    "Product of exponentiation (whitespace)"
+@is: 3*2 ^ 4,          48,    "Product of exponentiation (no whitespace)"
+@is: (3 * 2) ^ 4,    1296,    "Exponentiation of product (parens)"
+@is: 54 div 5,         10,    "Integer division with integers"
+@is: 54 mod 5,          4,    "Modulo with integers"
+@is: 54.3 div 5.1,     10,    "Integer division with fractions"
+@is: -54 div 5,       -11,    "Integer division (negative dividend)"
+@is: -(54 div 5),     -10,    "Negated integer division"
+@is: -(54 mod 5),      -4,    "Negateve modulo"
+@is: 3 * 18 div 5,     10,    "Integer division of multiplication"
+@is: 3 * (18 div 5),    9,    "Multiplication of integer division (parens)"
+@is: 3 * 18 mod 5,      4,    "Modulo of multiplication"
+@is: 3 * (18 mod 5),    9,    "Multiplication of modulo (parens)"
+@is: 54 div 5 * 3,     30,    "Multiplication of integer division"
+@is: 54 div (5 * 3),    3,    "Integer division with product"
+@is: 54 mod 5 * 3,     12,    "Multiplication of modulo"
+@is: 54 mod (5 * 3),    9,    "Modulo with product"
+@is: 3 - 8 + 7,         2,    "Addition / subtraction from left to right"
+@is: 3 - (8 + 7),     -12,    "Addition / subtraction with parens"
+@is: 3 + 8 * 7,        59,    "Multiplication before addition"
+@is: (3 + 8) * 7,      77,    "Multiplication with added factor (parens)"
+@is: 3 + - (2 ^ 4),   -13,    ""
+@is: 3 + 5 / 2 + 3,     8.5, "Division before addition"
+@is: (3 + 5) / (2 + 3), 1.6, "Division with added parts (parens)"
+
+@is_approx: 54.3 mod 5.1, 3.3, 1e-12, "Fractional modulo"
+
+@diag: "Operators"
+
+@is_true: 1 + 1 == 2, "Equals"
+@is_true: 1 + 1 <  3, "Less than"
+@is_true: 1 + 1 <= 2, "Less than or equal (equal)"
+@is_true: 1 + 1 <= 3, "Less than or equal (less than)"
+@is_true: 1 + 1 >  1, "Greater than"
+@is_true: 1 + 1 >= 2, "Greater than or equal (equal)"
+@is_true: 1 + 1 >= 1, "Greater than or equal (greater than)"
+
+@is_false:     5 + 6 == 10, "Addition is equal (false)"
+@is_true:      5 + 6 == 11, "Addition is equal (true)"
+@is_true:      5 + 6 <> 10, "Addition is not equal (true)"
+@is_false:     5 + 6 <> 11, "Addition is not equal (false)"
+@is_false:     5 + 6 <  10, "Addition is less than (false)"
+@is_false:     5 + 6 <  11, "Addition is less than (equal)"
+@is_true:      5 + 6 >  10, "Addition is greater than (true)"
+@is_false:     5 + 6 >  11, "Addition is greater than (equal)"
+@is_false:     5 + 6 <= 10, "Addition is less than or equal (false)"
+@is_true:      5 + 6 <= 11, "Addition is less than or equal (equal)"
+@is_true:      5 + 6 >= 10, "Addition is greater than or equal (true)"
+@is_true:      5 + 6 >= 11, "Addition is greater than or equal (equal)"
+@is_true:  not 5 + 6 == 10, "Negation of condition (true)"
+@is_false: not 5 + 6 == 11, "Negation of condition (false)"
+
 x = 7
-assert (x > 5 and x < 10) = 1
-assert (not x <= 5 and not x >= 10) = 1
-assert (not (x <= 5 or x >= 10)) = 1
-assert ("hallo" = "hallo") = 1
-assert ("hallo" = "hello") = 0
-assert ("hallo" <> "hallo") = 0
-assert ("hallo" <> "hello") = 1
-assert ("hallo" < "hallo") = 0
-assert ("hallo" < "hello") = 1
-assert ("hello" < "hallo") = 0
-assert ("hallo" > "hallo") = 0
-assert ("hallo" > "hello") = 0
-assert ("hello" > "hallo") = 1
-assert ("hallo" <= "hallo") = 1
-assert ("hallo" <= "hello") = 1
-assert ("hello" <= "hallo") = 0
-assert ("hallo" >= "hallo") = 1
-assert ("hallo" >= "hello") = 0
-assert ("hello" >= "hallo") = 1
-assert "hallo" + "dag" = "hallodag"
-assert "hallo" + "dag" <> "hellodag"
-assert "hallo" - "dag" = "hallo"
-assert "hallodag" - "dag" = "hallo"
 
-assert left$ ("hallo", 3) = "hal"
+@is_true: x > 5 and x < 10,           "Logical AND"
+@is_true: not x <= 5 and not x >= 10, "Logical NOT"
+@is_true: not (x <= 5 or x >= 10),    "Logical OR"
 
-printline OK
+@is_true:  "hallo" == "hallo", "String equal (true)"
+@is_false: "hallo" == "hello", "String equal (false)"
+@is_false: "hallo" <> "hallo", "String not-equal (false)"
+@is_true:  "hallo" <> "hello", "String not-equal (true)"
+@is_false: "hallo" <  "hallo", "String less than (equal)"
+@is_true:  "hallo" <  "hello", "String less than (true)"
+@is_false: "hello" <  "hallo", "String less than (false)"
+@is_false: "hallo" >  "hallo", "String greater than (equal)"
+@is_false: "hallo" >  "hello", "String greater than (false)"
+@is_true:  "hello" >  "hallo", "String greater than (true)"
+@is_true:  "hallo" <= "hallo", "String less than or equal (equal)"
+@is_true:  "hallo" <= "hello", "String less than or equal (true)"
+@is_false: "hello" <= "hallo", "String less than or equal (false)"
+@is_true:  "hallo" >= "hallo", "String greater than or equal (equal)"
+@is_false: "hallo" >= "hello", "String greater than or equal (false)"
+@is_true:  "hello" >= "hallo", "String greater than or equal (true)"
+
+@is_true: "hallo" + "dag" == "hallodag", "String addition (concatenation)"
+@is_true: "hallo" + "dag" <> "hellodag", "Comparison with concatenated string"
+@is_true: "hallodag" - "dag" == "hallo", "String subtraction"
+@is_true: "hallo"    - "dag" == "hallo", "Idempotent string subtraction"
+@is_true: left$("hallo", 3) == "hal", "Comparison of string function (left$)"
+
+@done_testing()
