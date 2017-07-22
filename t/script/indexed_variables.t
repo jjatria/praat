@@ -1,47 +1,37 @@
-writeInfoLine: "arrays..."
+include ../test/more.proc
 
-# should give a different error:
-;a
-
-a=5
-
-# should give an error:
-a+5
+@no_plan()
 
 a [1] = 3
-assert a [1] = 3
-appendInfoLine: a [1]
-
-; abcdefghijklmnopqrstuvwxyz
-;a [12345678]
+@is: a [1], 3, "Indexed query on indexed variable"
 
 a = 7
 asserterror Missing expression after variable a[9].
 a [a+2] =
-
-;a [2]
+@pass: "Missing expression after variable error"
 
 a [3], 5 = 7
-printline 'a[3,5]', 'a[3]'
+@is$: "'a[3,5]'", "'" + "a[3,5]" + "'", "Parsed faulty placement of closing bracket"
+@is$: "'a[3]'", "0", ""
 
 a [1] = 2
 b [a [1]] = 3
-assert b [a [1]] = 3
-printline 'b[2]'
+@is: b [a [1]], 3, "Nested indices"
+@is$: "'b[2]'", "3", "Interpolation of indexed variables"
 
 speaker$[1]="paul"
-printline <'speaker$[1]'>
+@is$: speaker$[1], "paul", "Assignment to string indexed varibale (no whitespace)"
+
 speaker$ [2] = "silke"
-printline <'speaker$[2]'>
+@is$: speaker$[2], "silke", "Assignment to string indexed varibale (whitespace)"
+
 a$ = speaker$ [1] + " " + speaker$ [2]
-printline <'a$'>
+@is$: a$, "paul silke", "Concatenation of indexed strings"
 
-a[2+length("h]""k")]=6
-assert a[6] = 6
-a[6]+=3
-assert a[6]=9
+a[2 + length("h]""k")] = 6
+@is: a[6], 6, "Complex indexing"
 
-speaker$ [1] = "JM"
-speaker$ [2] = "PB"
+a[6] += 3
+@is: a[6], 9, "Incrementing in indexed variables"
 
-printline OK
+@done_testing()
