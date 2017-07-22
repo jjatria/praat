@@ -4,6 +4,7 @@ include ../test/more.proc
 
 @diag: "Sound files..."
 
+data_path$ = "data/"
 outfile$ = "kanweg.out"
 
 procedure test: .bitness$, .type$, .duration
@@ -63,11 +64,11 @@ Debug: "no",  0
 @test: "32", "WAV",      3
 
 procedure do ()
-   Read from file: "test.wav"
+   Read from file: data_path$ + "test.wav"
    .wav = Get energy in air
    Remove
 
-   Read from file: "test.flac"
+   Read from file: data_path$ + "test.flac"
    .flac = Get energy in air
    Remove
 
