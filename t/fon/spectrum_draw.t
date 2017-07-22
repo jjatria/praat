@@ -1,3 +1,7 @@
+include ../test/more.proc
+
+@no_plan()
+
 # test/fon/Spectrum_draw.praat
 # Paul Boersma 2016-01-15
 
@@ -8,5 +12,10 @@ sound = Create Sound as pure tone: "tone", 1, 0, 0.4, 44100, 440, 0.2, 0.01, 0.0
 spec = To Spectrum: "yes"
 Formula: "self/0"
 Draw: 0, 0, 0, 0, "yes"
+@pass: "Drew object"
 
 removeObject: sound, spec
+
+@ok_selection()
+
+@done_testing()
