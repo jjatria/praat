@@ -1,19 +1,22 @@
 language: cpp
 
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-4.8
+      - g++-4.8
+      - libgtk2.0-dev
+      - libasound2-dev
+      - libpulse-dev
+    env:
+        - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
+
 before_install:
+  - eval "${MATRIX_EVAL}"
   - cp makefiles/makefile.defs.linux.pulse ./makefile.defs
 
 script:
   - make
   - make test
-
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - gcc-4.8
-    - g++-4.8
-    - libgtk2.0-dev
-    - libasound2-dev
-    - libpulse-dev
