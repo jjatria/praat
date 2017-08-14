@@ -1,6 +1,6 @@
 /* Sound_extensions.cpp
  *
- * Copyright (C) 1993-2011, 2015-2017 David Weenink
+ * Copyright (C) 1993-2011, 2015-2017 David Weenink, 2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,14 +122,14 @@ static void i1write (Sound me, FILE *f, long *nClip) {
 			sample = min;
 			(*nClip) ++;
 		}
-		binputi1 ((int) sample, f);
+		binputi8 ((int) sample, f);
 	}
 }
 
 static void i1read (Sound me, FILE *f) {
 	double *s = my z[1];
 	for (long i = 1; i <= my nx; i++) {
-		s[i] = bingeti1 (f) / 128.0;
+		s[i] = bingeti8 (f) / 128.0;
 	}
 }
 
@@ -145,20 +145,20 @@ static void u1write (Sound me, FILE *f, long *nClip) {
 			sample = min;
 			(*nClip) ++;
 		}
-		binputu1 ((unsigned int) sample, f);
+		binputu8 ((unsigned int) sample, f);
 	}
 }
 
 static void u1read (Sound me, FILE *f) {
 	double *s = my z[1];
 	for (long i = 1; i <= my nx; i++) {
-		s[i] = bingetu1 (f) / 128.0 - 1.0;
+		s[i] = bingetu8 (f) / 128.0 - 1.0;
 	}
 }
 
 static void i2write (Sound me, FILE *f, int littleEndian, long *nClip) {
 	double *s = my z[1], min = -32768, max = 32767;
-	void (*put) (int16_t, FILE *) = littleEndian ? binputi2LE : binputi2;
+	void (*put) (int16_t, FILE *) = littleEndian ? binputi16LE : binputi16;
 	*nClip = 0;
 	for (long i = 1; i <= my nx; i++) {
 		double sample = round (s[i] * 32768);
@@ -175,7 +175,7 @@ static void i2write (Sound me, FILE *f, int littleEndian, long *nClip) {
 
 static void i2read (Sound me, FILE *f, int littleEndian) {
 	double *s = my z[1];
-	int16_t (*get) (FILE *) = littleEndian ? bingeti2LE : bingeti2;
+	int16_t (*get) (FILE *) = littleEndian ? bingeti16LE : bingeti16;
 	for (long i = 1; i <= my nx; i++) {
 		s[i] = get (f) / 32768.;
 	}
@@ -183,7 +183,7 @@ static void i2read (Sound me, FILE *f, int littleEndian) {
 
 static void u2write (Sound me, FILE *f, int littleEndian, long *nClip) {
 	double *s = my z[1], min = 0, max = 65535;
-	void (*put) (uint16_t, FILE *) = littleEndian ? binputu2LE : binputu2;
+	void (*put) (uint16_t, FILE *) = littleEndian ? binputu16LE : binputu16;
 	*nClip = 0;
 	for (long i = 1; i <= my nx; i++) {
 		double sample = round ( (s[i] + 1) * 65535 / 2);
@@ -200,7 +200,7 @@ static void u2write (Sound me, FILE *f, int littleEndian, long *nClip) {
 
 static void u2read (Sound me, FILE *f, int littleEndian) {
 	double *s = my z[1];
-	uint16_t (*get) (FILE *) = littleEndian ? bingetu2LE : bingetu2;
+	uint16_t (*get) (FILE *) = littleEndian ? bingetu16LE : bingetu16;
 	for (long i = 1; i <= my nx; i++) {
 		s[i] = get (f) / 32768.0 - 1.0;
 	}
@@ -208,7 +208,7 @@ static void u2read (Sound me, FILE *f, int littleEndian) {
 
 static void i4write (Sound me, FILE *f, int littleEndian, long *nClip) {
 	double *s = my z[1]; double min = -2147483648.0, max = 2147483647.0;
-	void (*put) (int32_t, FILE *) = littleEndian ? binputi4LE : binputi4;
+	void (*put) (int32_t, FILE *) = littleEndian ? binputi32LE : binputi32;
 	*nClip = 0;
 	for (long i = 1; i <= my nx; i++) {
 		double sample = round (s[i] * 2147483648.0);
@@ -225,7 +225,7 @@ static void i4write (Sound me, FILE *f, int littleEndian, long *nClip) {
 
 static void i4read (Sound me, FILE *f, int littleEndian) {
 	double *s = my z[1];
-	int32_t (*get) (FILE *) = littleEndian ? bingeti4LE : bingeti4;
+	int32_t (*get) (FILE *) = littleEndian ? bingeti32LE : bingeti32;
 	for (long i = 1; i <= my nx; i++) {
 		s[i] = get (f) / 2147483648.;
 	}
@@ -234,7 +234,7 @@ static void i4read (Sound me, FILE *f, int littleEndian) {
 
 static void u4write (Sound me, FILE *f, int littleEndian, long *nClip) {
 	double *s = my z[1]; double min = 0.0, max = 4294967295.0;
-	void (*put) (uint32_t, FILE *) = littleEndian ? binputu4LE : binputu4;
+	void (*put) (uint32_t, FILE *) = littleEndian ? binputu32LE : binputu32;
 	*nClip = 0;
 	for (long i = 1; i <= my nx; i++) {
 		double sample = floor (s[i] * 4294967295.0 + 0.5);
@@ -251,7 +251,7 @@ static void u4write (Sound me, FILE *f, int littleEndian, long *nClip) {
 
 static void u4read (Sound me, FILE *f, int littleEndian) {
 	double *s = my z[1];
-	int32_t (*get) (FILE *) = littleEndian ? bingeti4LE : bingeti4;
+	int32_t (*get) (FILE *) = littleEndian ? bingeti32LE : bingeti32;
 	for (long i = 1; i <= my nx; i++) {
 		s[i] = get (f) / 2147483648.0 - 1.0;
 	}
@@ -261,14 +261,14 @@ static void u4read (Sound me, FILE *f, int littleEndian) {
 static void r4write (Sound me, FILE *f) {
 	double *s = my z[1];
 	for (long i = 1; i <= my nx; i++) {
-		binputr4 (s[i], f);
+		binputr32 (s[i], f);
 	}
 }
 
 static void r4read (Sound me, FILE *f) {
 	double *s = my z[1];
 	for (long i = 1; i <= my nx; i++) {
-		s[i] = bingetr4 (f);
+		s[i] = bingetr32 (f);
 	}
 }
 
@@ -277,21 +277,21 @@ autoSound Sound_readFromCmuAudioFile (MelderFile file) {
 	try {
 		int littleEndian = 1;
 		autofile f = Melder_fopen (file, "rb");
-		if (bingeti2LE (f) != 6) {
+		if (bingeti16LE (f) != 6) {
 			Melder_throw (U"Incorrect header size.");
 		}
-		bingeti2LE (f);
-		short nChannels = bingeti2LE (f);
+		bingeti16LE (f);
+		short nChannels = bingeti16LE (f);
 		if (nChannels < 1) {
 			Melder_throw (U"Incorrect number of channels.");
 		}
 		if (nChannels > 1) {
 			Melder_throw (U"File has multiple channels: cannot read.");
 		}
-		if (bingeti2LE (f) < 1) {
+		if (bingeti16LE (f) < 1) {
 			Melder_throw (U"Incorrect sampling frequency.");
 		}
-		long nSamples = bingeti4LE (f);
+		long nSamples = bingeti32LE (f);
 		if (nSamples < 1) {
 			Melder_throw (U"Incorrect number of samples.");
 		}
@@ -1274,7 +1274,7 @@ autoPointProcess Sound_to_PointProcess_getJumps (Sound me, double minimumJump, d
 /* Internal pitch representation in semitones */
 autoSound Sound_and_Pitch_changeSpeaker (Sound me, Pitch him, double formantMultiplier, double pitchMultiplier, double pitchRangeMultiplier, double durationMultiplier) {
 	try {
-		double samplingFrequency_old = 1 / my dx;
+		double samplingFrequency_old = 1.0 / my dx;
 
 		if (my xmin != his xmin || my xmax != his xmax) {
 			Melder_throw (U"The Pitch and the Sound object must have the same start and end times.");
@@ -1282,7 +1282,7 @@ autoSound Sound_and_Pitch_changeSpeaker (Sound me, Pitch him, double formantMult
 		autoSound sound = Data_copy (me);
 		Vector_subtractMean (sound.get());
 
-		if (formantMultiplier != 1) {
+		if (formantMultiplier != 1.0) {
 			// Shift all frequencies (inclusive pitch!) */
 			Sound_overrideSamplingFrequency (sound.get(), samplingFrequency_old * formantMultiplier);
 		}
@@ -1294,8 +1294,8 @@ autoSound Sound_and_Pitch_changeSpeaker (Sound me, Pitch him, double formantMult
 		autoPointProcess pulses = Sound_Pitch_to_PointProcess_cc (sound.get(), pitch.get());
 		autoPitchTier pitchTier = Pitch_to_PitchTier (pitch.get());
 
-		double median = Pitch_getQuantile (pitch.get(), 0, 0, 0.5, kPitch_unit_HERTZ);
-		if (median != 0 && median != NUMundefined) {
+		double median = Pitch_getQuantile (pitch.get(), 0.0, 0.0, 0.5, kPitch_unit_HERTZ);
+		if (isdefined (median) && median != 0.0) {
 			/* Incorporate pitch shift from overriding the sampling frequency */
 			PitchTier_multiplyFrequencies (pitchTier.get(), sound -> xmin, sound -> xmax, pitchMultiplier / formantMultiplier);
 			PitchTier_modifyExcursionRange (pitchTier.get(), sound -> xmin, sound -> xmax, pitchRangeMultiplier, median);
@@ -1309,7 +1309,7 @@ autoSound Sound_and_Pitch_changeSpeaker (Sound me, Pitch him, double formantMult
 
 		// Resample to the original sampling frequency
 
-		if (formantMultiplier != 1) {
+		if (formantMultiplier != 1.0) {
 			thee = Sound_resample (thee.get(), samplingFrequency_old, 10);
 		}
 		return thee;
@@ -1332,7 +1332,7 @@ autoTextGrid Sound_to_TextGrid_detectSilences (Sound me, double minPitch, double
 	double silenceThreshold, double minSilenceDuration, double minSoundingDuration,
 	const char32 *silentLabel, const char32 *soundingLabel) {
 	try {
-		int subtractMeanPressure = 1;
+		bool subtractMeanPressure = true;
 		autoSound filtered = Sound_filter_passHannBand (me, 80.0, 8000.0, 80.0);
 		autoIntensity thee = Sound_to_Intensity (filtered.get(), minPitch, timeStep, subtractMeanPressure);
 		autoTextGrid him = Intensity_to_TextGrid_detectSilences (thee.get(), silenceThreshold, minSilenceDuration, minSoundingDuration, silentLabel, soundingLabel);
@@ -1557,9 +1557,9 @@ autoSound Sound_and_Pitch_changeGender_old (Sound me, Pitch him, double formantR
 		autoPitchTier pitchTier = Pitch_to_PitchTier (pitch.get());
 
 		double median = Pitch_getQuantile (pitch.get(), 0, 0, 0.5, kPitch_unit_HERTZ);
-		if (median != 0 && median != NUMundefined) {
+		if (isdefined (median) && median != 0.0) {
 			// Incorporate pitch shift from overriding the sampling frequency
-			if (new_pitch == 0) {
+			if (new_pitch == 0.0) {
 				new_pitch = median / formantRatio;
 			}
 			double factor = new_pitch / median;
@@ -1895,7 +1895,7 @@ static void Sound_findIntermediatePoint_bs (Sound me, long ichannel, long isampl
 		for (long channel = 1; channel <= my ny; channel++) {
 			thy z[channel][2] = Vector_getValueAtX (me, xmid, channel, interpolation);
 		}
-		struct Formula_Result result;
+		Formula_Result result;
 		Formula_compile (interpreter, thee.get(), formula, kFormula_EXPRESSION_TYPE_NUMERIC, true);
 		Formula_run (ichannel, 2, & result);
 		bool current = (result.result.numericResult != 0.0);
@@ -1939,7 +1939,7 @@ void Sound_drawWhere (Sound me, Graphics g, double tmin, double tmax, double min
 	// Set coordinates for drawing.
 
 	Graphics_setInner (g);
-	struct Formula_Result result;
+	Formula_Result result;
 	for (long channel = 1; channel <= my ny; channel ++) {
 		Graphics_setWindow (g, tmin, tmax, minimum - (my ny - channel) * (maximum - minimum), maximum + (channel - 1) * (maximum - minimum));
 		if (str32str (method, U"bars") || str32str (method, U"Bars")) {
@@ -2043,7 +2043,7 @@ void Sound_drawWhere (Sound me, Graphics g, double tmin, double tmax, double min
 void Sound_paintWhere (Sound me, Graphics g, Graphics_Colour colour, double tmin, double tmax, double minimum, double maximum, double level, bool garnish, long numberOfBisections, const char32 *formula, Interpreter interpreter) {
 	try {
 		long ixmin, ixmax;
-		struct Formula_Result result;
+		Formula_Result result;
 
 		Formula_compile (interpreter, me, formula, kFormula_EXPRESSION_TYPE_NUMERIC, true);
 
@@ -2212,8 +2212,9 @@ static autoSound Sound_removeNoiseBySpectralSubtraction_mono (Sound me, Sound no
 
 static void Sound_findNoise (Sound me, double minimumNoiseDuration, double *noiseStart, double *noiseEnd) {
 	try {
-		*noiseStart = NUMundefined; *noiseEnd = NUMundefined;
-		autoIntensity intensity = Sound_to_Intensity (me, 20, 0.005, 1);
+		*noiseStart = undefined;
+		*noiseEnd = undefined;
+		autoIntensity intensity = Sound_to_Intensity (me, 20.0, 0.005, true);
 		double tmin = Vector_getXOfMinimum (intensity.get(), intensity -> xmin, intensity ->  xmax, 1) - minimumNoiseDuration / 2;
 		double tmax = tmin + minimumNoiseDuration;
 		if (tmin < my xmin) {
@@ -2225,7 +2226,8 @@ static void Sound_findNoise (Sound me, double minimumNoiseDuration, double *nois
 		if (tmin < my xmin) {
 			Melder_throw (U"Sound too short, or window length too long.");
 		}
-		*noiseStart = tmin; *noiseEnd = tmax;
+		*noiseStart = tmin;
+		*noiseEnd = tmax;
 	} catch (MelderError) {
 		Melder_throw (me, U": noise not found.");
 	}

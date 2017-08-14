@@ -94,7 +94,7 @@ autoDiscriminant Discriminant_create (long numberOfGroups, long numberOfEigenval
 }
 
 long Discriminant_groupLabelToIndex (Discriminant me, const char32 *label) {
-	char32 *name;
+	const char32 *name;
 
 	for (long i = 1; i <= my numberOfGroups; i ++) {
 		if (!! (name = Thing_getName (my groups -> at [i])) && str32equ (name, label)) {
@@ -156,7 +156,7 @@ autoStrings Discriminant_extractGroupLabels (Discriminant me) {
 		thy strings = NUMvector<char32 *> (1, my numberOfGroups);
 		thy numberOfStrings = my numberOfGroups;
 		for (long i = 1; i <= my numberOfGroups; i ++) {
-			char32 *name = Thing_getName (my groups->at [i]);
+			const char32 *name = Thing_getName (my groups->at [i]);
 			thy strings [i] = Melder_dup (name);
 		}
 		return thee;
@@ -192,7 +192,7 @@ autoTableOfReal Discriminant_extractGroupStandardDeviations (Discriminant me) {
 			TableOfReal_setRowLabel (thee.get(), i, Thing_getName (sscp));
 			long numberOfObservationsm1 = (long) floor (sscp -> numberOfObservations) - 1;
 			for (long j = 1; j <= n; j ++) {
-				thy data [i] [j] = numberOfObservationsm1 > 0 ? sqrt (sscp -> data [j] [j] / numberOfObservationsm1) : NUMundefined;
+				thy data [i] [j] = ( numberOfObservationsm1 > 0 ? sqrt (sscp -> data [j] [j] / numberOfObservationsm1) : undefined );
 			}
 		}
 		NUMstrings_copyElements (my groups->at [m] -> columnLabels, thy columnLabels, 1, n);
@@ -269,7 +269,7 @@ void Discriminant_getPartialDiscriminationProbability (Discriminant me, long num
 	long numberOfFunctions = Discriminant_getNumberOfFunctions (me);
 	double degreesOfFreedom = Discriminant_getDegreesOfFreedom (me);
 
-	double prob = NUMundefined,  chisq = NUMundefined, df = NUMundefined;
+	double prob = undefined, chisq = undefined, df = undefined;
 
 	if (k < numberOfFunctions) {
 		double lambda = NUMwilksLambda (my eigen -> eigenvalues, k + 1, numberOfFunctions);
@@ -295,7 +295,7 @@ void Discriminant_getPartialDiscriminationProbability (Discriminant me, long num
 double Discriminant_getConcentrationEllipseArea (Discriminant me, long group,
         double scale, bool confidence, int discriminantDirections, long d1, long d2)
 {
-	double area = NUMundefined;
+	double area = undefined;
 
 	if (group < 1 || group > my numberOfGroups) {
 		return area;
@@ -312,7 +312,7 @@ double Discriminant_getConcentrationEllipseArea (Discriminant me, long group,
 
 double Discriminant_getLnDeterminant_group (Discriminant me, long group) {
 	if (group < 1 || group > my numberOfGroups) {
-		return NUMundefined;
+		return undefined;
 	}
 	autoCovariance c = SSCP_to_Covariance (my groups->at [group], 1);
 	double ln_d = SSCP_getLnDeterminant (c.get());

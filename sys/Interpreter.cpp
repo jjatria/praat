@@ -1,6 +1,6 @@
 /* Interpreter.cpp
  *
- * Copyright (C) 1993-2011,2013,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1993-2011,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,8 +44,8 @@ Thing_implement (InterpreterVariable, SimpleString, 0);
 void structInterpreterVariable :: v_destroy () noexcept {
 	Melder_free (our string);
 	Melder_free (our stringValue);
-	NUMvector_free (our numericVectorValue. data, 1);
-	NUMmatrix_free (our numericMatrixValue. data, 1, 1);
+	NUMvector_free (our numericVectorValue.at, 1);
+	NUMmatrix_free (our numericMatrixValue.at, 1, 1);
 	InterpreterVariable_Parent :: v_destroy ();
 }
 
@@ -134,7 +134,7 @@ void Melder_includeIncludeFiles (char32 **text) {
 			/*
 				Get the contents of the include file.
 			 */
-			structMelderFile includeFile = { 0 };
+			structMelderFile includeFile { };
 			Melder_relativePathToFile (includeFileName, & includeFile);
 			autostring32 includeText;
 			try {
@@ -695,8 +695,8 @@ void Interpreter_run (Interpreter me, char32 *text) {
 	long lineNumber = 0;
 	bool assertionFailed = false;
 	try {
-		static MelderString valueString { 0 };   // to divert the info
-		static MelderString assertErrorString { 0 };
+		static MelderString valueString { };   // to divert the info
+		static MelderString assertErrorString { };
 		char32 *command = text;
 		autoMelderString command2;
 		autoMelderString buffer;
@@ -793,7 +793,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 		Interpreter_addStringVariable (me, U"newline$", U"\n");
 		Interpreter_addStringVariable (me, U"tab$", U"\t");
 		Interpreter_addStringVariable (me, U"shellDirectory$", Melder_getShellDirectory ());
-		structMelderDir dir { { 0 } }; Melder_getDefaultDir (& dir);
+		structMelderDir dir { }; Melder_getDefaultDir (& dir);
 		Interpreter_addStringVariable (me, U"defaultDirectory$", Melder_dirToPath (& dir));
 		Interpreter_addStringVariable (me, U"preferencesDirectory$", Melder_dirToPath (& praatDir));
 		Melder_getHomeDir (& dir);
@@ -954,7 +954,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									if (*q == U'(' || *q == U':') q ++;   // step over parenthesis or colon
 								}
 								while (*q && *q != U')') {
-									static MelderString argument { 0 };
+									static MelderString argument { };
 									MelderString_empty (& argument);
 									while (Melder_isblank (*p)) p ++;
 									while (Melder_isblank (*q)) q ++;
@@ -1008,6 +1008,26 @@ void Interpreter_run (Interpreter me, char32 *text) {
 										InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName); *q = save;
 										Melder_free (var -> stringValue);
 										var -> stringValue = value;
+									} else if (q [-1] == U'#') {
+										if (q [-2] == U'#') {
+											nummat value;
+											my callDepth --;
+											Interpreter_numericMatrixExpression (me, argument.string, & value);
+											my callDepth ++;
+											char32 save = *q; *q = U'\0';
+											InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName); *q = save;
+											var -> numericMatrixValue. reset();
+											var -> numericMatrixValue = value;
+										} else {
+											numvec value;
+											my callDepth --;
+											Interpreter_numericVectorExpression (me, argument.string, & value);
+											my callDepth ++;
+											char32 save = *q; *q = U'\0';
+											InterpreterVariable var = Interpreter_lookUpVariable (me, parameterName); *q = save;
+											var -> numericVectorValue. reset();
+											var -> numericVectorValue = value;
+										}
 									} else {
 										double value;
 										my callDepth --;
@@ -1033,7 +1053,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 						if (str32nequ (command2.string, U"assert ", 7)) {
 							double value;
 							Interpreter_numericExpression (me, command2.string + 7, & value);
-							if (value == 0.0 || value == NUMundefined) {
+							if (value == 0.0 || isundef (value)) {
 								assertionFailed = true;
 								Melder_throw (U"Script assertion fails in line ", lineNumber,
 									U" (", value == 0.0 ? U"false" : U"undefined", U"):\n   ", command2.string + 7);
@@ -1089,7 +1109,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 										++ p;   // first argument
 										while (*q && *q != ')') {
 											char32 *par, save;
-											static MelderString arg { 0 };
+											static MelderString arg { };
 											MelderString_empty (& arg);
 											while (Melder_isblank (*p)) p ++;
 											while (*q == U' ' || *q == U'\t' || *q == U',' || *q == U')') q ++;
@@ -1332,7 +1352,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									}
 								}
 								if (iline > numberOfLines) Melder_throw (U"Unmatched 'if'.");
-							} else if (value == NUMundefined) {
+							} else if (isundef (value)) {
 								Melder_throw (U"The value of the 'if' condition is undefined.");
 							}
 						} else if (str32nequ (command2.string, U"inc ", 4)) {
@@ -1474,11 +1494,11 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							 * This must be an assignment to an indexed string variable.
 							 */
 							*endOfVariable = U'\0';
-							static MelderString indexedVariableName { 0 };
+							static MelderString indexedVariableName { };
 							MelderString_copy (& indexedVariableName, command2.string, U"[");
 							for (;;) {
 								p ++;   // skip opening bracket or comma
-								static MelderString index { 0 };
+								static MelderString index { };
 								MelderString_empty (& index);
 								int depth = 0;
 								bool inString = false;
@@ -1494,7 +1514,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								}
 								if (*p == U'\n' || *p == U'\0')
 									Melder_throw (U"Missing closing bracket (]) in indexed variable.");
-								struct Formula_Result result;
+								Formula_Result result;
 								Interpreter_anyExpression (me, index.string, & result);
 								if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
 									double numericIndexValue = result.result.numericResult;
@@ -1532,7 +1552,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								Melder_throw (U"Missing expression after variable ", variableName, U".");
 						}
 						if (withFile) {
-							structMelderFile file = { 0 };
+							structMelderFile file { };
 							Melder_relativePathToFile (p, & file);
 							if (withFile == 1) {
 								char32 *stringValue = MelderFile_readText (& file);
@@ -1582,7 +1602,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							/*
 								Assign to a numeric matrix variable or to a matrix element.
 							*/
-							static MelderString matrixName { 0 };
+							static MelderString matrixName { };
 							p ++;   // go to second '#'
 							*p = U'\0';   // erase the last number sign temporarily
 							MelderString_copy (& matrixName, command2.string, U'#');
@@ -1597,10 +1617,10 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								while (Melder_isblank (*p)) p ++;   // go to first token after assignment
 								if (*p == U'\0')
 									Melder_throw (U"Missing right-hand expression in assignment to matrix ", matrixName.string, U".");
-								struct Formula_NumericMatrix value;
+								nummat value;
 								Interpreter_numericMatrixExpression (me, p, & value);
 								InterpreterVariable var = Interpreter_lookUpVariable (me, matrixName.string);
-								NUMmatrix_free (var -> numericMatrixValue. data, 1, 1);
+								NUMmatrix_free (var -> numericMatrixValue.at, 1, 1);
 								var -> numericMatrixValue = value;
 							} else if (*p == U'[') {
 								/*
@@ -1611,7 +1631,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								/*
 									Get the row number.
 								*/
-								static MelderString rowFormula { 0 };
+								static MelderString rowFormula { };
 								MelderString_empty (& rowFormula);
 								int depth = 0;
 								bool inString = false;
@@ -1627,7 +1647,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								}
 								if (*p == U'\n' || *p == U'\0')
 									Melder_throw (U"Missing comma in matrix indexing.");
-								struct Formula_Result result;
+								Formula_Result result;
 								Interpreter_anyExpression (me, rowFormula.string, & result);
 								if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
 									rowNumber = lround (result.result.numericResult);
@@ -1639,7 +1659,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								/*
 									Get the column number.
 								*/
-								static MelderString columnFormula { 0 };
+								static MelderString columnFormula { };
 								MelderString_empty (& columnFormula);
 								depth = 0;
 								inString = false;
@@ -1679,21 +1699,21 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									Melder_throw (U"Matrix ", matrixName.string, U" does not exist.");
 								if (rowNumber < 1)
 									Melder_throw (U"A row number cannot be less than 1 (the row number you supplied is ", rowNumber, U").");
-								if (rowNumber > var -> numericMatrixValue. numberOfRows)
+								if (rowNumber > var -> numericMatrixValue. nrow)
 									Melder_throw (U"A row number cannot be greater than the number of rows (here ",
-										var -> numericMatrixValue. numberOfRows, U"). The row number you supplied is ", rowNumber, U".");
+										var -> numericMatrixValue. nrow, U"). The row number you supplied is ", rowNumber, U".");
 								if (columnNumber < 1)
 									Melder_throw (U"A column number cannot be less than 1 (the column number you supplied is ", columnNumber, U").");
-								if (columnNumber > var -> numericMatrixValue. numberOfColumns)
+								if (columnNumber > var -> numericMatrixValue. ncol)
 									Melder_throw (U"A column number cannot be greater than the number of columns (here ",
-										var -> numericMatrixValue. numberOfColumns, U"). The column number you supplied is ", columnNumber, U".");
-								var -> numericMatrixValue. data [rowNumber] [columnNumber] = value;
+										var -> numericMatrixValue. ncol, U"). The column number you supplied is ", columnNumber, U".");
+								var -> numericMatrixValue.at [rowNumber] [columnNumber] = value;
 							} else Melder_throw (U"Missing '=' after matrix variable ", matrixName.string, U".");
 						} else {
 							/*
 								Assign to a numeric vector variable or to a vector element.
 							*/
-							static MelderString vectorName { 0 };
+							static MelderString vectorName { };
 							*p = U'\0';   // erase the number sign temporarily
 							MelderString_copy (& vectorName, command2.string, U"#");
 							*p = U'#';   // put the number sign back
@@ -1707,10 +1727,10 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								while (Melder_isblank (*p)) p ++;   // go to first token after assignment
 								if (*p == U'\0')
 									Melder_throw (U"Missing right-hand expression in assignment to vector ", vectorName.string, U".");
-								struct Formula_NumericVector value;
+								numvec value;
 								Interpreter_numericVectorExpression (me, p, & value);
 								InterpreterVariable var = Interpreter_lookUpVariable (me, vectorName.string);
-								NUMvector_free (var -> numericVectorValue. data, 1);
+								NUMvector_free (var -> numericVectorValue.at, 1);
 								var -> numericVectorValue = value;
 							} else if (*p == U'[') {
 								/*
@@ -1718,7 +1738,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								 */
 								long indexValue = 0;
 								p ++;   // step over opening bracket
-								static MelderString index { 0 };
+								static MelderString index { };
 								MelderString_empty (& index);
 								int depth = 0;
 								bool inString = false;
@@ -1734,7 +1754,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								}
 								if (*p == U'\n' || *p == U'\0')
 									Melder_throw (U"Missing closing bracket (]) in array element.");
-								struct Formula_Result result;
+								Formula_Result result;
 								Interpreter_anyExpression (me, index.string, & result);
 								if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
 									indexValue = lround (result.result.numericResult);
@@ -1757,10 +1777,10 @@ void Interpreter_run (Interpreter me, char32 *text) {
 									Melder_throw (U"Vector ", vectorName.string, U" does not exist.");
 								if (indexValue < 1)
 									Melder_throw (U"A vector index cannot be less than 1 (the index you supplied is ", indexValue, U").");
-								if (indexValue > var -> numericVectorValue. numberOfElements)
+								if (indexValue > var -> numericVectorValue.size)
 									Melder_throw (U"A vector index cannot be greater than the number of elements (here ",
-										var -> numericVectorValue. numberOfElements, U"). The index you supplied is ", indexValue, U".");
-								var -> numericVectorValue. data [indexValue] = value;
+										var -> numericVectorValue.size, U"). The index you supplied is ", indexValue, U".");
+								var -> numericVectorValue.at [indexValue] = value;
 							} else Melder_throw (U"Missing '=' after vector variable ", vectorName.string, U".");
 						}
 					} else {
@@ -1790,11 +1810,11 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							 * This must be an assignment to an indexed numeric variable.
 							 */
 							*endOfVariable = U'\0';
-							static MelderString indexedVariableName { 0 };
+							static MelderString indexedVariableName { };
 							MelderString_copy (& indexedVariableName, command2.string, U"[");
 							for (;;) {
 								p ++;   // skip opening bracket or comma
-								static MelderString index { 0 };
+								static MelderString index { };
 								MelderString_empty (& index);
 								int depth = 0;
 								bool inString = false;
@@ -1810,7 +1830,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								}
 								if (*p == U'\n' || *p == U'\0')
 									Melder_throw (U"Missing closing bracket (]) in indexed variable.");
-								struct Formula_Result result;
+								Formula_Result result;
 								Interpreter_anyExpression (me, index.string, & result);
 								if (result.expressionType == kFormula_EXPRESSION_TYPE_NUMERIC) {
 									double numericIndexValue = result.result.numericResult;
@@ -1855,7 +1875,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							MelderString_appendCharacter (& valueString, 1);   // will be overwritten by something totally different if any MelderInfo function is called...
 							int status = praat_executeCommand (me, p);
 							if (status == 0) {
-								value = NUMundefined;
+								value = undefined;
 							} else if (valueString.string [0] == 1) {   // ...not overwritten by any MelderInfo function? then the return value will be the selected object
 								int IOBJECT, result = 0, found = 0;
 								WHERE (SELECTED) { result = IOBJECT; found += 1; }
@@ -1891,7 +1911,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 							 */
 							InterpreterVariable var = Interpreter_hasVariable (me, variableName);
 							if (! var) Melder_throw (U"Unknown variable ", variableName, U".");
-							if (var -> numericValue == NUMundefined) {
+							if (isundef (var -> numericValue)) {
 								/* Keep it that way. */
 							} else {
 								if (typeOfAssignment == 1) {
@@ -1901,7 +1921,7 @@ void Interpreter_run (Interpreter me, char32 *text) {
 								} else if (typeOfAssignment == 3) {
 									var -> numericValue *= value;
 								} else if (value == 0) {
-									var -> numericValue = NUMundefined;
+									var -> numericValue = undefined;
 								} else {
 									var -> numericValue /= value;
 								}
@@ -1973,7 +1993,7 @@ void Interpreter_stop (Interpreter me) {
 
 void Interpreter_voidExpression (Interpreter me, const char32 *expression) {
 	Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_NUMERIC, false);
-	struct Formula_Result result;
+	Formula_Result result;
 	Formula_run (0, 0, & result);
 }
 
@@ -1983,34 +2003,34 @@ void Interpreter_numericExpression (Interpreter me, const char32 *expression, do
 		*value = Melder_atof (expression);
 	} else {
 		Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_NUMERIC, false);
-		struct Formula_Result result;
+		Formula_Result result;
 		Formula_run (0, 0, & result);
 		*value = result. result.numericResult;
 	}
 }
 
-void Interpreter_numericVectorExpression (Interpreter me, const char32 *expression, struct Formula_NumericVector *value) {
+void Interpreter_numericVectorExpression (Interpreter me, const char32 *expression, numvec *value) {
 	Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_NUMERIC_VECTOR, false);
-	struct Formula_Result result;
+	Formula_Result result;
 	Formula_run (0, 0, & result);
 	*value = result. result.numericVectorResult;
 }
 
-void Interpreter_numericMatrixExpression (Interpreter me, const char32 *expression, struct Formula_NumericMatrix *value) {
+void Interpreter_numericMatrixExpression (Interpreter me, const char32 *expression, nummat *value) {
 	Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_NUMERIC_MATRIX, false);
-	struct Formula_Result result;
+	Formula_Result result;
 	Formula_run (0, 0, & result);
 	*value = result. result.numericMatrixResult;
 }
 
 void Interpreter_stringExpression (Interpreter me, const char32 *expression, char32 **value) {
 	Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_STRING, false);
-	struct Formula_Result result;
+	Formula_Result result;
 	Formula_run (0, 0, & result);
 	*value = result. result.stringResult;
 }
 
-void Interpreter_anyExpression (Interpreter me, const char32 *expression, struct Formula_Result *result) {
+void Interpreter_anyExpression (Interpreter me, const char32 *expression, Formula_Result *result) {
 	Formula_compile (me, nullptr, expression, kFormula_EXPRESSION_TYPE_UNKNOWN, false);
 	Formula_run (0, 0, result);
 }

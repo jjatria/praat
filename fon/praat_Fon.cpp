@@ -740,7 +740,7 @@ FORM (REAL_Harmonicity_getValueInFrame, U"Get value in frame", U"Harmonicity: Ge
 	OK
 DO
 	NUMBER_ONE (Harmonicity)
-		double result = frameNumber < 1 || frameNumber > my nx ? NUMundefined : my z [1] [frameNumber];
+		double result = ( frameNumber < 1 || frameNumber > my nx ? undefined : my z [1] [frameNumber] );
 	NUMBER_ONE_END (U" dB")
 }
 
@@ -803,7 +803,7 @@ FORM (REAL_Intensity_getValueInFrame, U"Get value in frame", U"Intensity: Get va
 	OK
 DO
 	NUMBER_ONE (Intensity)
-		double result = frameNumber < 1 || frameNumber > my nx ? NUMundefined : my z [1] [frameNumber];
+		double result = ( frameNumber < 1 || frameNumber > my nx ? undefined : my z [1] [frameNumber] );
 	NUMBER_ONE_END (U" dB")
 }
 
@@ -1232,7 +1232,7 @@ FORM (REAL_Ltas_getValueInBin, U"Get value in bin", U"Ltas: Get value in bin..."
 	OK
 DO
 	NUMBER_ONE (Ltas)
-		double result = binNumber < 1 || binNumber > my nx ? NUMundefined : my z [1] [binNumber];
+		double result = binNumber < 1 || binNumber > my nx ? undefined : my z [1] [binNumber];
 	NUMBER_ONE_END (U" dB")
 }
 
@@ -2573,7 +2573,7 @@ DIRECT (NEW_Spectrum_to_SpectrumTier_peaks) {
 FORM (NEW1_Strings_createAsFileList, U"Create Strings as file list", U"Create Strings as file list...") {
 	SENTENCEVAR (name, U"Name", U"fileList")
 	LABEL (U"", U"File path:")
-	static structMelderDir defaultDir { { 0 } };
+	static structMelderDir defaultDir { };
 	Melder_getHomeDir (& defaultDir);
 	static const char32 *homeDirectory = Melder_dirToPath (& defaultDir);
 	static char32 defaultPath [kMelder_MAXPATH+1];
@@ -2598,7 +2598,7 @@ DO
 FORM (NEW1_Strings_createAsDirectoryList, U"Create Strings as directory list", U"Create Strings as directory list...") {
 	SENTENCEVAR (name, U"Name", U"directoryList")
 	LABEL (U"", U"Path:")
-	static structMelderDir defaultDir = { { 0 } };
+	static structMelderDir defaultDir { };
 	Melder_getHomeDir (& defaultDir);
 	static const char32 *homeDirectory = Melder_dirToPath (& defaultDir);
 	static char32 defaultPath [kMelder_MAXPATH+1];

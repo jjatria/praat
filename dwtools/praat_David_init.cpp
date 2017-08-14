@@ -130,6 +130,7 @@
 #include "Sound_to_SPINET.h"
 #include "TableOfReal_and_SVD.h"
 #include "TextGrid_and_DurationTier.h"
+#include "TextGrid_and_PitchTier.h"
 #include "VowelEditor.h"
 
 #include "praat_TimeFrameSampled.h"
@@ -1798,7 +1799,7 @@ FORM (REAL_DTW_getDistanceValue, U"DTW: Get distance value", nullptr) {
 	OK
 DO
 	NUMBER_ONE (DTW)
-		double result = NUMundefined;
+		double result = undefined;
 		if ((xTime >= my xmin && xTime <= my xmax) && (yTime >= my ymin && yTime <= my ymax)) {
 			long irow = Matrix_yToNearestRow (me, yTime);
 			long icol = Matrix_xToNearestColumn (me, xTime);
@@ -2220,7 +2221,7 @@ FORM (REAL_Eigen_getEigenvalue, U"Eigen: Get eigenvalue", U"Eigen: Get eigenvalu
 	OK
 DO
 	NUMBER_ONE (Eigen)
-		double result = NUMundefined;
+		double result = undefined;
 		if (eigenvalueNumber > 0 && eigenvalueNumber <= my numberOfEigenvalues) {
 			result = my eigenvalues [eigenvalueNumber];
 		}
@@ -2956,7 +2957,7 @@ FORM (REAL_FunctionTerms_getCoefficient, U"FunctionTerms: Get coefficient", null
 	OK
 DO
 	NUMBER_ONE (FunctionTerms)
-		double result = (index > 0 && index <= my numberOfCoefficients) ? my coefficients [index] : NUMundefined;
+		double result = ( index > 0 && index <= my numberOfCoefficients ? my coefficients [index] : undefined );
 	NUMBER_ONE_END (U"")
 }
 
@@ -3593,7 +3594,7 @@ FORM (REAL_FilterBank_getValueInCell, U"Get value in cell", nullptr) {
 	OK
 DO
 	NUMBER_ONE (FilterBank)
-		double result = NUMundefined;
+		double result = undefined;
 		if ((frequency >= my ymin && frequency <= my ymax) && (time >+ my xmin && time <= my ymin)) {
 			long col = Matrix_xToNearestColumn (me, time);
 			if (col < 1) {
@@ -3664,7 +3665,7 @@ FORM (REAL_BandFilterSpectrogram_getValueInCell, U"Get value in cell", nullptr) 
 	OK
 DO
 	NUMBER_ONE (BandFilterSpectrogram)
-		double result = NUMundefined;
+		double result = undefined;
 		if ((frequency >= my ymin && frequency <= my ymax) && (time >+ my xmin && time <= my ymin)) {
 			long col = Matrix_xToNearestColumn (me, time);
 			if (col < 1) {
@@ -3976,7 +3977,7 @@ FORM (REAL_PatternList_getValue, U"", nullptr) {
 	OK
 DO
 	NUMBER_ONE (PatternList)
-		double result = patternNumber <= my ny && nodeNumber <= my nx ? my z [patternNumber] [nodeNumber] : NUMundefined;
+		double result = ( patternNumber <= my ny && nodeNumber <= my nx ? my z [patternNumber] [nodeNumber] : undefined );
 	NUMBER_ONE_END (U"")
 }
 
@@ -4399,6 +4400,71 @@ DO
 	CONVERT_EACH_END (my name)
 }
 
+FORM (MODIFY_PitchTier_modifyInterval, U"PitchTier: Modify interval", U"PitchTier: Modify interval...") {
+	REAL4 (fromTime, U"left Time range (s)", U"0.0")
+	REAL4 (toTime, U"right Time range", U"0.0 (= all)")
+	LABEL (U"", U"")
+	SENTENCEVAR (timesString, U"Relative times", U"0.0 0.5 1.0")
+	OPTIONMENUVAR (timeOffset, U"...are...", 1)
+		OPTION (U"fractions")
+		OPTION (U"percentages")
+		OPTION (U"independent")
+	LABEL (U"", U"...of the interval duration which will be added...")
+	LABEL (U"", U"...to the start time of the interval.")
+	SENTENCEVAR (pitches_string, U"The \"pitch\" values", U"100 200 100")
+	OPTIONMENUVAR (pitch_as, U"...are...", 1)
+		OPTION (U"frequencies")
+		OPTION (U"fractions")
+		OPTION (U"percentages")
+		OPTION (U"start and slopes")
+		OPTION (U"slopes and end")
+		OPTION (U"music notes")
+//		OPTION (U"semitones")
+	LABEL (U"", U"...to be added to the anchor value (if used)...")
+	OPTIONMENUVAR (pitch_is, U"...which is the...", 1)
+		OPTION (U"not used")
+		OPTION (U"current")
+		OPTION (U"start")
+		OPTION (U"end")
+		OPTION (U"mean of the curve")
+		OPTION (U"mean of the points")
+		OPTION (U"maximum")
+		OPTION (U"minimum")
+	LABEL (U"", U"...frequency value in the interval.")
+	LABEL (U"", U"")
+	OPTIONMENUVAR (pitch_unit, U"Pitch frequency unit", 1)
+		OPTION (U"Hertz")
+
+	OK
+DO
+	MODIFY_EACH (PitchTier)
+		PitchTier_modifyInterval (me, fromTime, toTime, timesString, timeOffset, pitches_string, pitch_unit, pitch_as, pitch_is);
+	MODIFY_EACH_END
+}
+
+
+FORM (MODIFY_PitchTier_modifyInterval_toneLevels, U"PitchTier: Modify interval (tone levels)", U"PitchTier: Modify interval (tone levels)...") {
+	REAL4 (fromTime, U"left Time range (s)", U"0.0")
+	REAL4 (toTime, U"right Time range", U"0.0 (= all)")
+	REAL4 (fmin, U"left Pitch range (Hz)", U"80.0")
+	REAL4 (fmax, U"right Pitch range", U"200.0")
+	NATURAL4 (numberOfToneLevels, U"Number of tone levels", U"5")
+	LABEL (U"", U"")
+	SENTENCEVAR (times_string, U"Relative times", U"0.0 0.5 1.0")
+	OPTIONMENUVAR (time_offset, U"...are...", 1)
+		OPTION (U"fractions")
+		OPTION (U"percentages")
+		OPTION (U"independent")
+	LABEL (U"", U"...of the interval duration which will be added...")
+	LABEL (U"", U"...to the start time of the interval.")
+	SENTENCEVAR (pitches_string, U"Tone levels", U"2.1 2.1 5.0")
+	OK
+DO
+	MODIFY_EACH (PitchTier)
+		PitchTier_modifyInterval_toneLevels (me, fromTime, toTime, fmin, fmax, numberOfToneLevels, times_string, time_offset, pitches_string);
+	MODIFY_EACH_END
+}
+
 /******************* Polygon & Categories *************************************/
 
 FORM (NEW1_Polygon_createSimple, U"Create simple Polygon", U"Create simple Polygon...") {
@@ -4436,7 +4502,7 @@ FORM (REAL_Polygon_getPointX, U"Polygon: Get point (x)", nullptr) {
 	OK
 DO
 	NUMBER_ONE (Polygon)
-		double result = pointNumber <= my numberOfPoints ? my x[pointNumber] : NUMundefined;
+		double result = ( pointNumber <= my numberOfPoints ? my x [pointNumber] : undefined );
 	NUMBER_ONE_END (U" (x [", pointNumber, U"])")
 }
 
@@ -4445,7 +4511,7 @@ FORM (REAL_Polygon_getPointY, U"Polygon: Get point (y)", nullptr) {
 	OK
 DO
 	NUMBER_ONE (Polygon)
-		double result = pointNumber <= my numberOfPoints ? my y[pointNumber] : NUMundefined;
+		double result = ( pointNumber <= my numberOfPoints ? my y [pointNumber] : undefined );
 	NUMBER_ONE_END (U" (y [", pointNumber, U"])")
 }
 
@@ -4459,8 +4525,8 @@ DO
 	REQUIRE (eps >= 0, U"The precision cannot be negative.")
 	STRING_ONE (Polygon)
 		int loc = Polygon_getLocationOfPoint (me, x, y, eps);
-		const char32 * result = loc == Polygon_INSIDE ? U"I" : loc == Polygon_OUTSIDE ? U"O" :
-		loc == Polygon_EDGE ? U"E" : U"V";
+		const char32 * result = ( loc == Polygon_INSIDE ? U"I" : loc == Polygon_OUTSIDE ? U"O" :
+			loc == Polygon_EDGE ? U"E" : U"V" );
 	STRING_ONE_END
 }
 
@@ -4644,7 +4710,7 @@ DO
 		Polynomial_evaluateDerivatives (me, x, derivatives.peek(), numberOfDerivatives);
 		MelderInfo_open ();
 			for (long i = 0; i <= numberOfDerivatives; i++) {
-				MelderInfo_writeLine (i, U": ", i < my numberOfCoefficients ? derivatives [i] : NUMundefined);
+				MelderInfo_writeLine (i, U": ", i < my numberOfCoefficients ? derivatives [i] : undefined);
 			}
 		MelderInfo_close ();
 	INFO_ONE_END
@@ -4858,6 +4924,7 @@ DIRECT (INFO_Praat_ReportFloatingPointProperties) {
 	MelderInfo_writeLine (U"Underflow threshold (= radix ^ (expmin - 1)): ", NUMfpp -> rmin);
 	MelderInfo_writeLine (U"Safe minimum (such that its inverse does not overflow): ", NUMfpp -> sfmin);
 	MelderInfo_writeLine (U"Overflow threshold (= (1 - eps) * radix ^ expmax): ", NUMfpp -> rmax);
+	MelderInfo_writeLine (U"\nA long double is ", sizeof (long double), U" bytes");
 	MelderInfo_close ();
 END }
 
@@ -5870,7 +5937,7 @@ FORM (REAL_SSCP_getCentroidElement, U"SSCP: Get centroid element", U"SSCP: Get c
 	OK
 DO
 	NUMBER_ONE (SSCP)
-		double result = NUMundefined;
+		double result = undefined;
 		if (number > 0 && number <= my numberOfColumns) {
 			result = my centroid [number];
 		}
@@ -7875,6 +7942,8 @@ void praat_uvafon_David_init () {
 	praat_addAction1 (classPitch, 2, U"To DTW...", U"To PointProcess", praat_HIDDEN, NEW1_Pitches_to_DTW);
 
 	praat_addAction1 (classPitchTier, 0, U"To Pitch...", U"To Sound (sine)...", 1, NEW_PitchTier_to_Pitch);
+	praat_addAction1 (classPitchTier, 0, U"Modify interval...", U"Add point...", 1, MODIFY_PitchTier_modifyInterval); 
+	praat_addAction1 (classPitchTier, 0, U"Modify interval (tone levels)...", U"Modify interval...", 1, MODIFY_PitchTier_modifyInterval_toneLevels); 
 	praat_addAction1 (classPolygon, 0, QUERY_BUTTON, U"Paint circles...", 0, 0);
 	praat_addAction1 (classPolygon, 0, U"Get number of points", QUERY_BUTTON, 1, INTEGER_Polygon_getNumberOfPoints);
 	praat_addAction1 (classPolygon, 0, U"Get point (x)...", U"Get number of points", 1, REAL_Polygon_getPointX);

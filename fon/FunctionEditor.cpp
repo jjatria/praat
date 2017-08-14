@@ -68,7 +68,7 @@ static void updateScrollBar (FunctionEditor me) {
 	if (value < 1.0) value = 1.0;
 	double increment = slider_size / SCROLL_INCREMENT_FRACTION + 1.0;
 	double page_increment = RELATIVE_PAGE_INCREMENT * slider_size + 1.0;
-	GuiScrollBar_set (my scrollBar, NUMundefined, maximumScrollBarValue, value, slider_size, increment, page_increment);
+	GuiScrollBar_set (my scrollBar, undefined, maximumScrollBarValue, value, slider_size, increment, page_increment);
 }
 
 static void updateGroup (FunctionEditor me) {
@@ -218,7 +218,7 @@ static void drawNow (FunctionEditor me) {
 		double bottom = my rect [i]. bottom, top = my rect [i]. top;
 		if (left < right) {
 			const char *format = my v_format_long ();
-			double value = NUMundefined, inverseValue = 0.0;
+			double value = undefined, inverseValue = 0.0;
 			switch (i) {
 				case 0: format = my v_format_totalDuration (), value = my tmax - my tmin; break;
 				case 1: format = my v_format_window (), value = my endWindow - my startWindow;
@@ -1552,7 +1552,7 @@ void FunctionEditor_ungroup (FunctionEditor me) {
 }
 
 void FunctionEditor_drawRangeMark (FunctionEditor me, double yWC, const char32 *yWC_string, const char32 *units, int verticalAlignment) {
-	static MelderString text { 0 };
+	static MelderString text { };
 	MelderString_copy (& text, yWC_string, units);
 	double textWidth = Graphics_textWidth (my graphics.get(), text.string) + Graphics_dxMMtoWC (my graphics.get(), 0.5);
 	Graphics_setColour (my graphics.get(), Graphics_BLUE);
@@ -1585,7 +1585,7 @@ void FunctionEditor_insertCursorFunctionValue (FunctionEditor me, double yWC, co
 	} else if (tooLow) {
 		textY = minimum + Graphics_dyMMtoWC (my graphics.get(), 5.0);
 	}
-	static MelderString text { 0 };
+	static MelderString text { };
 	MelderString_copy (& text, yWC_string, units);
 	double textWidth = Graphics_textWidth (my graphics.get(), text.string);
 	Graphics_fillCircle_mm (my graphics.get(), my endWindow + textWidth + Graphics_dxMMtoWC (my graphics.get(), 1.5), textY, 1.5);

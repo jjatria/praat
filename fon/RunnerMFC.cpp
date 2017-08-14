@@ -115,7 +115,7 @@ static void drawNow (RunnerMFC me) {
 				if (visibleText_q) visibleText_p = visibleText_q + 1; else visibleText_p += str32len (visibleText_p);
 			}
 			if (str32nequ (textToDraw, U"\\FI", 3)) {
-				structMelderFile file = { 0 };
+				structMelderFile file { };
 				MelderDir_relativePathToFile (& experiment -> rootDirectory, textToDraw + 3, & file);
 				Graphics_imageFromFile (my graphics.get(), Melder_fileToPath (& file), response -> left, response -> right, response -> bottom, response -> top);
 			} else {
@@ -469,7 +469,7 @@ autoRunnerMFC RunnerMFC_create (const char32 *title, autoExperimentMFCList exper
 		my experiments = experiments.move();
 		my graphics = Graphics_create_xmdrawingarea (my d_drawingArea);
 
-struct structGuiDrawingArea_ResizeEvent event { my d_drawingArea, 0 };
+structGuiDrawingArea_ResizeEvent event { my d_drawingArea, 0, 0 };
 event. width  = GuiControl_getWidth  (my d_drawingArea);
 event. height = GuiControl_getHeight (my d_drawingArea);
 gui_drawingarea_cb_resize (me.get(), & event);

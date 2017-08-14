@@ -19,6 +19,7 @@
  */
 
 #include "Data.h"
+#include "tensor.h"
 
 #define kFormula_EXPRESSION_TYPE_NUMERIC  0
 #define kFormula_EXPRESSION_TYPE_STRING  1
@@ -28,16 +29,6 @@
 #define kFormula_EXPRESSION_TYPE_NUMERIC_TENSOR4  5
 #define kFormula_EXPRESSION_TYPE_STRING_ARRAY  6
 #define kFormula_EXPRESSION_TYPE_UNKNOWN  7
-
-struct Formula_NumericVector {
-	long numberOfElements;
-	double *data;
-};
-
-struct Formula_NumericMatrix {
-	long numberOfRows, numberOfColumns;
-	double **data;
-};
 
 Thing_declare (InterpreterVariable);
 
@@ -56,8 +47,8 @@ typedef struct structStackel {
 		double number;
 		char32 *string;
 		Daata object;
-		struct Formula_NumericVector numericVector;
-		struct Formula_NumericMatrix numericMatrix;
+		numvec numericVector;
+		nummat numericMatrix;
 		InterpreterVariable variable;
 	};
 } *Stackel;
@@ -68,8 +59,8 @@ struct Formula_Result {
 	union {
 		double numericResult;
 		char32 *stringResult;
-		struct Formula_NumericVector numericVectorResult;
-		struct Formula_NumericMatrix numericMatrixResult;
+		numvec numericVectorResult;
+		nummat numericMatrixResult;
 	} result;
 };
 
@@ -77,7 +68,7 @@ Thing_declare (Interpreter);
 
 void Formula_compile (Interpreter interpreter, Daata data, const char32 *expression, int expressionType, bool optimize);
 
-void Formula_run (long row, long col, struct Formula_Result *result);
+void Formula_run (long row, long col, Formula_Result *result);
 
 /* End of file Formula.h */
 #endif

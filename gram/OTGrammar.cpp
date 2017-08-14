@@ -1,6 +1,6 @@
 /* OTGrammar.cpp
  *
- * Copyright (C) 1997-2012,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1997-2012,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,7 +73,6 @@
  */
 
 #include "OTGrammar.h"
-#include "NUM.h"
 
 #include "oo_DESTROY.h"
 #include "OTGrammar_def.h"
@@ -172,20 +171,20 @@ void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
 	OTGrammar_Parent :: v_readText (text, formatVersion);
 	if (formatVersion >= 1) {
 		try {
-			decisionStrategy = texgete1 (text, kOTGrammar_decisionStrategy_getValue);
+			decisionStrategy = texgete8 (text, kOTGrammar_decisionStrategy_getValue);
 		} catch (MelderError) {
 			Melder_throw (U"Trying to read decision strategy.");
 		}
 	}
 	if (formatVersion >= 2) {
 		try {
-			leak = texgetr8 (text);
+			leak = texgetr64 (text);
 		} catch (MelderError) {
 			Melder_throw (U"Trying to read leak.");
 		}
 	}
 	try {
-		numberOfConstraints = texgeti4 (text);
+		numberOfConstraints = texgeti32 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Trying to read number of constraints.");
 	}
@@ -194,17 +193,17 @@ void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
 	for (long icons = 1; icons <= numberOfConstraints; icons ++) {
 		OTGrammarConstraint constraint = & constraints [icons];
 		try {
-			constraint -> name = texgetw2 (text);
+			constraint -> name = texgetw16 (text);
 		} catch (MelderError) {
 			Melder_throw (U"Trying to read name of constraint ", icons, U".");
 		}
 		try {
-			constraint -> ranking = texgetr8 (text);
+			constraint -> ranking = texgetr64 (text);
 		} catch (MelderError) {
 			Melder_throw (U"Trying to read ranking of constraint ", icons, U".");
 		}
 		try {
-			constraint -> disharmony = texgetr8 (text);
+			constraint -> disharmony = texgetr64 (text);
 		} catch (MelderError) {
 			Melder_throw (U"Trying to read disharmony of constraint ", icons, U".");
 		}
@@ -212,14 +211,14 @@ void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
 			constraint -> plasticity = 1.0;
 		} else {
 			try {
-				constraint -> plasticity = texgetr8 (text);
+				constraint -> plasticity = texgetr64 (text);
 			} catch (MelderError) {
 				Melder_throw (U"Trying to read plasticity of constraint ", icons, U".");
 			}
 		}
 	}
 	try {
-		numberOfFixedRankings = texgeti4 (text);
+		numberOfFixedRankings = texgeti32 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Trying to read number of fixed rankings.");
 	}
@@ -228,19 +227,19 @@ void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
 		for (long irank = 1; irank <= numberOfFixedRankings; irank ++) {
 			OTGrammarFixedRanking fixedRanking = & fixedRankings [irank];
 			try {
-				fixedRanking -> higher = texgeti4 (text);
+				fixedRanking -> higher = texgeti32 (text);
 			} catch (MelderError) {
 				Melder_throw (U"Trying to read the higher of constraint pair ", irank, U".");
 			}
 			try {
-				fixedRanking -> lower = texgeti4 (text);
+				fixedRanking -> lower = texgeti32 (text);
 			} catch (MelderError) {
 				Melder_throw (U"Trying to read the lower of constraint pair ", irank, U".");
 			}
 		}
 	}
 	try {
-		numberOfTableaus = texgeti4 (text);
+		numberOfTableaus = texgeti32 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Trying to read number of tableaus.");
 	}
@@ -249,12 +248,12 @@ void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
 	for (long itab = 1; itab <= numberOfTableaus; itab ++) {
 		OTGrammarTableau tableau = & tableaus [itab];
 		try {
-			tableau -> input = texgetw2 (text);
+			tableau -> input = texgetw16 (text);
 		} catch (MelderError) {
 			Melder_throw (U"Trying to read input of tableau ", itab, U".");
 		}
 		try {
-			tableau -> numberOfCandidates = texgeti4 (text);
+			tableau -> numberOfCandidates = texgeti32 (text);
 		} catch (MelderError) {
 			Melder_throw (U"Trying to read number of candidates of tableau ", itab, U".");
 		}
@@ -269,7 +268,7 @@ void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
 		for (long icand = 1; icand <= tableau -> numberOfCandidates; icand ++) {
 			OTGrammarCandidate candidate = & tableau -> candidates [icand];
 			try {
-				candidate -> output = texgetw2 (text);
+				candidate -> output = texgetw16 (text);
 			} catch (MelderError) {
 				Melder_throw (U"Trying to read candidate ", icand, U" of tableau ", itab,
 					U" (input: ", tableau -> input, U") in line ", MelderReadText_getLineNumber (text), U".");
@@ -278,7 +277,7 @@ void structOTGrammar :: v_readText (MelderReadText text, int formatVersion) {
 			candidate -> marks = NUMvector <int> (1, candidate -> numberOfConstraints);
 			for (long icons = 1; icons <= candidate -> numberOfConstraints; icons ++) {
 				try {
-					candidate -> marks [icons] = texgeti2 (text);
+					candidate -> marks [icons] = texgeti16 (text);
 				} catch (MelderError) {
 					Melder_throw
 					(U"Trying to read number of violations of constraint ", icons,
@@ -1832,7 +1831,7 @@ bool OTGrammar_PairDistribution_findPositiveWeights_e (OTGrammar me, PairDistrib
 		 */
 		linprog = NUMlinprog_new (false);
 		for (long icons = 1; icons <= my numberOfConstraints; icons ++) {
-			NUMlinprog_addVariable (linprog, weightFloor, NUMundefined, 1.0);
+			NUMlinprog_addVariable (linprog, weightFloor, undefined, 1.0);
 		}
 		for (long itab = 1; itab <= my numberOfTableaus; itab ++) {
 			OTGrammarTableau tab = & my tableaus [itab];
@@ -1842,7 +1841,7 @@ bool OTGrammar_PairDistribution_findPositiveWeights_e (OTGrammar me, PairDistrib
 			OTGrammarCandidate optimalCandidate = & tab -> candidates [ioptimalCandidate];
 			for (long icand = 1; icand <= tab -> numberOfCandidates; icand ++) if (icand != ioptimalCandidate) {
 				OTGrammarCandidate cand = & tab -> candidates [icand];
-				NUMlinprog_addConstraint (linprog, marginOfSeparation, NUMundefined);
+				NUMlinprog_addConstraint (linprog, marginOfSeparation, undefined);
 				for (long icons = 1; icons <= my numberOfConstraints; icons ++) {
 					NUMlinprog_addConstraintCoefficient (linprog, cand -> marks [icons] - optimalCandidate -> marks [icons]);
 				}
@@ -2186,7 +2185,7 @@ static void OTGrammar_Distributions_opt_createOutputMatching (OTGrammar me, Dist
 			for (long icand = 1; icand <= tab -> numberOfCandidates; icand ++) {
 				OTGrammarCandidate cand = & tab -> candidates [icand];
 				cand -> numberOfPotentialPartialOutputsMatching = thy numberOfRows;
-				cand -> partialOutputMatches = NUMvector <signed char> (1, thy numberOfRows);
+				cand -> partialOutputMatches = NUMvector <bool> (1, thy numberOfRows);
 			}
 		}
 		for (long ipartialOutput = 1; ipartialOutput <= thy numberOfRows; ipartialOutput ++) {

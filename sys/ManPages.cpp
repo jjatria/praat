@@ -101,7 +101,7 @@ static const char32 *extractLink (const char32 *text, const char32 *p, char32 *l
 static void readOnePage (ManPages me, MelderReadText text) {
 	char32 *title;
 	try {
-		title = texgetw2 (text);
+		title = texgetw16 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Cannot find page title.");
 	}
@@ -124,17 +124,17 @@ static void readOnePage (ManPages me, MelderReadText text) {
 	my pages. addItem_move (autopage.move());
 
 	try {
-		page -> author = texgetw2 (text);
+		page -> author = texgetw16 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Cannot find author.");
 	}
 	try {
-		page -> date = texgetu4 (text);
+		page -> date = texgetu32 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Cannot find date.");
 	}
 	try {
-		page -> recordingTime = texgetr8 (text);
+		page -> recordingTime = texgetr64 (text);
 	} catch (MelderError) {
 		Melder_throw (U"Cannot find recording time.");
 	}
@@ -144,7 +144,7 @@ static void readOnePage (ManPages me, MelderReadText text) {
 	for (;; par ++) {
 		char32 link [501], fileName [256];
 		try {
-			par -> type = texgete1 (text, kManPage_type_getValue);
+			par -> type = texgete8 (text, kManPage_type_getValue);
 		} catch (MelderError) {
 			if (Melder_hasError (U"end of text")) {
 				Melder_clearError ();
@@ -154,11 +154,11 @@ static void readOnePage (ManPages me, MelderReadText text) {
 			}
 		}
 		if (par -> type == kManPage_type_SCRIPT) {
-			par -> width = texgetr4 (text);
-			par -> height = texgetr4 (text);
+			par -> width = texgetr64 (text);
+			par -> height = texgetr64 (text);
 		}
 		try {
-			par -> text = texgetw2 (text);
+			par -> text = texgetw16 (text);
 		} catch (MelderError) {
 			Melder_throw (U"Cannot find text.");
 		}
@@ -167,7 +167,7 @@ static void readOnePage (ManPages me, MelderReadText text) {
 			 * Now, `link' contains the link text, with spaces and all.
 			 * Transform it into a file name.
 			 */
-			structMelderFile file2 = { 0 };
+			structMelderFile file2 { };
 			if (link [0] == U'\\' && link [1] == U'F' && link [2] == U'I') {
 				/*
 				 * A link to a sound file: see if it exists.
@@ -831,14 +831,14 @@ static void writePageAsHtml (ManPages me, MelderFile file, long ipage, MelderStr
 }
 
 void ManPages_writeOneToHtmlFile (ManPages me, long ipage, MelderFile file) {
-	static MelderString buffer { 0 };
+	static MelderString buffer { };
 	MelderString_empty (& buffer);
 	writePageAsHtml (me, file, ipage, & buffer);
 	MelderFile_writeText (file, buffer.string, kMelder_textOutputEncoding_UTF8);
 }
 
 void ManPages_writeAllToHtmlDir (ManPages me, const char32 *dirPath) {
-	structMelderDir dir;
+	structMelderDir dir { };
 	Melder_pathToDir (dirPath, & dir);
 	for (long ipage = 1; ipage <= my pages.size; ipage ++) {
 		ManPage page = my pages.at [ipage];
@@ -853,9 +853,9 @@ void ManPages_writeAllToHtmlDir (ManPages me, const char32 *dirPath) {
 			str32cpy (fileName, U"_");   // no empty file names please
 		fileName [LONGEST_FILE_NAME] = U'\0';
 		str32cpy (fileName + str32len (fileName), U".html");
-		static MelderString buffer { 0 };
+		static MelderString buffer { };
 		MelderString_empty (& buffer);
-		structMelderFile file = { 0 };
+		structMelderFile file { };
 		MelderDir_getFile (& dir, fileName, & file);
 		writePageAsHtml (me, & file, ipage, & buffer);
 		/*

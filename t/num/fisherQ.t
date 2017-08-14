@@ -180,7 +180,7 @@ Debug: "no", 29 ; set invFisherQ to GSL
 .f = invFisherQ (0.01, 1, 10000)   ; not such an unusual case
 
 msg$ = "Using invFisherQ from GSL"
-if !(index_regex(string$(.f), "(nan|NaN|NAN)") or (abs(.f - 6.63743) < 1e-5))
+if .f != undefined or abs(.f - 6.63743) < 1e-5
    @fail: msg$
    @diag: "        got: '.f'"
    @diag: "   expected: nan or 6.63743 +- 1e05"

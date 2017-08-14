@@ -1,6 +1,6 @@
 /* Matrix.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,16 +60,16 @@ void structMatrix :: v_info () {
 
 void structMatrix :: v_readText (MelderReadText text, int formatVersion) {
 	if (formatVersion < 0) {
-		our xmin = texgetr8 (text);
-		our xmax = texgetr8 (text);
-		our ymin = texgetr8 (text);
-		our ymax = texgetr8 (text);
-		our nx = texgeti4 (text);
-		our ny = texgeti4 (text);
-		our dx = texgetr8 (text);
-		our dy = texgetr8 (text);
-		our x1 = texgetr8 (text);
-		our y1 = texgetr8 (text);
+		our xmin = texgetr64 (text);
+		our xmax = texgetr64 (text);
+		our ymin = texgetr64 (text);
+		our ymax = texgetr64 (text);
+		our nx = texgeti32 (text);
+		our ny = texgeti32 (text);
+		our dx = texgetr64 (text);
+		our dy = texgetr64 (text);
+		our x1 = texgetr64 (text);
+		our y1 = texgetr64 (text);
 	} else {
 		Matrix_Parent :: v_readText (text, formatVersion);
 	}
@@ -85,12 +85,12 @@ void structMatrix :: v_readText (MelderReadText text, int formatVersion) {
 		Melder_throw (U"dx should be greater than 0.0.");
 	if (our dy <= 0.0)
 		Melder_throw (U"dy should be greater than 0.0.");
-	our z = NUMmatrix_readText_r8 (1, our ny, 1, our nx, text, "z");
+	our z = NUMmatrix_readText_r64 (1, our ny, 1, our nx, text, "z");
 }
 
 double structMatrix :: v_getValueAtSample (long isamp, long ilevel, int unit) {
 	double value = our z [ilevel] [isamp];
-	return NUMdefined (value) ? our v_convertStandardToSpecialUnit (value, ilevel, unit) : NUMundefined;
+	return ( isdefined (value) ? our v_convertStandardToSpecialUnit (value, ilevel, unit) : undefined );
 }
 
 double structMatrix :: v_getMatrix (long irow, long icol) {
@@ -213,8 +213,8 @@ double Matrix_getValueAtXY (Matrix me, double x, double y) {
 	 * We imagine a unit square around every (xi, yi) point in the matrix.
 	 * For (x, y) values outside the union of these squares, the z value is undefined.
 	 */
-	if (row_real < 0.5 || row_real > my ny + 0.5) return NUMundefined;
-	if (col_real < 0.5 || col_real > my nx + 0.5) return NUMundefined;
+	if (row_real < 0.5 || row_real > my ny + 0.5) return undefined;
+	if (col_real < 0.5 || col_real > my nx + 0.5) return undefined;
 	/*
 	 * Determine the four nearest (xi, yi) points.
 	 */
@@ -244,17 +244,17 @@ double Matrix_getValueAtXY (Matrix me, double x, double y) {
 
 double Matrix_getSum (Matrix me) {
 	double sum = 0.0;
-	for (long row = 1; row <= my ny; row ++)
-		for (long col = 1; col <= my nx; col ++)
-			sum += my z [row] [col];
+	for (long irow = 1; irow <= my ny; irow ++)
+		for (long icol = 1; icol <= my nx; icol ++)
+			sum += my z [irow] [icol];
 	return sum;
 }
 
 double Matrix_getNorm (Matrix me) {
 	double sum = 0.0;
-	for (long row = 1; row <= my ny; row ++)
-		for (long col = 1; col <= my nx; col ++)
-			sum += my z [row] [col] * my z [row] [col];
+	for (long irow = 1; irow <= my ny; irow ++)
+		for (long icol = 1; icol <= my nx; icol ++)
+			sum += my z [irow] [icol] * my z [irow] [icol];
 	return sqrt (sum);
 }
 
@@ -437,7 +437,7 @@ autoMatrix Matrix_readAP (MelderFile file) {
 		autofile f = Melder_fopen (file, "rb");
 		int16_t header [256];
 		for (long i = 0; i < 256; i ++)
-			header [i] = bingeti2LE (f);
+			header [i] = bingeti16LE (f);
 		double samplingFrequency = header [100];   // converting up (from 16 to 54 bytes)
 		Melder_casual (U"Sampling frequency ", samplingFrequency);
 		autoMatrix me = Matrix_create (0.0, (double) header [34], header [34] /* Number of frames. */, 1.0, 0.5,
@@ -451,7 +451,7 @@ autoMatrix Matrix_readAP (MelderFile file) {
 			U" of ", header [35], U" words ...");
 		for (long i = 1; i <= my nx; i ++)
 			for (long j = 1; j <= my ny; j ++)
-				my z [j] [i] = bingeti2LE (f);   // converting up (from 16 to 54 bytes)
+				my z [j] [i] = bingeti16LE (f);   // converting up (from 16 to 54 bytes)
 
 		/*
 		 * Get pitch frequencies.
@@ -592,12 +592,15 @@ autoMatrix Matrix_power (Matrix me, long power) {
 void Matrix_writeToMatrixTextFile (Matrix me, MelderFile file) {
 	try {
 		autofile f = Melder_fopen (file, "w");
-		fprintf (f, "\"ooTextFile\"\n\"Matrix\"\n%.17g %.17g %ld %.17g %.17g\n%.17g %.17g %ld %.17g %.17g\n",
-			my xmin, my xmax, (long) my nx, my dx, my x1, my ymin, my ymax, my ny, my dy, my y1);
+		fprintf (f, "\"ooTextFile\"\n\"Matrix\"\n%s %s %s %s %s\n%s %s %s %s %s\n",
+			Melder8_double (my xmin), Melder8_double (my xmax), Melder8_integer (my nx),
+				Melder8_double (my dx), Melder8_double (my x1),
+			Melder8_double (my ymin), Melder8_double (my ymax), Melder8_integer (my ny),
+				Melder8_double (my dy), Melder8_double (my y1));
 		for (long i = 1; i <= my ny; i ++) {
 			for (long j = 1; j <= my nx; j ++) {
 				if (j > 1) fprintf (f, " ");
-				fprintf (f, "%.17g", my z [i] [j]);
+				fprintf (f, "%s", Melder8_double (my z [i] [j]));
 			}
 			fprintf (f, "\n");
 		}
@@ -625,7 +628,7 @@ void Matrix_writeToHeaderlessSpreadsheetFile (Matrix me, MelderFile file) {
 
 void Matrix_formula (Matrix me, const char32 *expression, Interpreter interpreter, Matrix target) {
 	try {
-		struct Formula_Result result;
+		Formula_Result result;
 		Formula_compile (interpreter, me, expression, kFormula_EXPRESSION_TYPE_NUMERIC, true);
 		if (! target) target = me;
 		for (long irow = 1; irow <= my ny; irow ++) {
@@ -648,7 +651,7 @@ void Matrix_formula_part (Matrix me, double xmin, double xmax, double ymin, doub
 		long ixmin, ixmax, iymin, iymax;
 		(void) Matrix_getWindowSamplesX (me, xmin, xmax, & ixmin, & ixmax);
 		(void) Matrix_getWindowSamplesY (me, ymin, ymax, & iymin, & iymax);
-		struct Formula_Result result;
+		Formula_Result result;
 		Formula_compile (interpreter, me, expression, kFormula_EXPRESSION_TYPE_NUMERIC, true);
 		if (! target) target = me;
 		for (long irow = iymin; irow <= iymax; irow ++) {

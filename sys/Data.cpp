@@ -1,6 +1,6 @@
 /* Data.cpp
  *
- * Copyright (C) 1992-2012,2015,2016 Paul Boersma
+ * Copyright (C) 1992-2012,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 Thing_implement (Daata, Thing, 0);
 
-structMelderDir Data_directoryBeingRead { { 0 } };
+structMelderDir Data_directoryBeingRead { };
 
 void structDaata :: v_copy (Daata /* thee */) {
 }
@@ -91,7 +91,7 @@ MelderFile Data_createTextFile (Daata me, MelderFile file, bool verbose) {
 	else if (file -> outputEncoding == kMelder_textOutputEncoding_ISO_LATIN1_THEN_UTF16)
 		file -> outputEncoding = Data_canWriteAsEncoding (me, kMelder_textOutputEncoding_ISO_LATIN1) ? kMelder_textOutputEncoding_ISO_LATIN1 : kMelder_textOutputEncoding_UTF16;
 	if (file -> outputEncoding == kMelder_textOutputEncoding_UTF16) {
-		binputu2 (0xfeff, file -> filePointer);
+		binputu16 (0xfeff, file -> filePointer);
 	}
 	return mfile.transfer();
 }
@@ -155,7 +155,7 @@ void Data_writeToBinaryFile (Daata me, MelderFile file) {
 		autoMelderFile mfile = MelderFile_create (file);
 		if (fprintf (file -> filePointer, "ooBinaryFile") < 0)
 			Melder_throw (U"Cannot write first bytes of file.");
-		binputw1 (
+		binputw8 (
 			my classInfo -> version > 0 ?
 				Melder_cat (my classInfo -> className, U" ", my classInfo -> version) :
 				my classInfo -> className,
@@ -190,7 +190,7 @@ autoDaata Data_readFromTextFile (MelderFile file) {
 		autoDaata me;
 		int formatVersion;
 		if (end) {
-			autostring32 klas = texgetw2 (text.peek());
+			autostring32 klas = texgetw16 (text.peek());
 			me = Thing_newFromClassName (klas.peek(), & formatVersion).static_cast_move <structDaata> ();
 		} else {
 			end = str32str (line, U"TextFile");
@@ -236,7 +236,7 @@ autoDaata Data_readFromBinaryFile (MelderFile file) {
 		int formatVersion;
 		if (end) {
 			fseek (f, strlen ("ooBinaryFile"), 0);
-			autostring8 klas = bingets1 (f);
+			autostring8 klas = bingets8 (f);
 			me = Thing_newFromClassName (Melder_peek8to32 (klas.peek()), & formatVersion).static_cast_move <structDaata> ();
 		} else {
 			end = strstr (line, "BinaryFile");
@@ -381,6 +381,7 @@ Data_Description Data_Description_findNumberUse (Data_Description structDescript
 int64 Data_Description_integer (void *address, Data_Description description) {
 	switch (description -> type) {
 		case bytewa:           return * (signed char *)    ((char *) address + description -> offset);
+		case int16wa:          return * (int16 *)          ((char *) address + description -> offset);
 		case intwa:            return * (int *)            ((char *) address + description -> offset);
 		case longwa:           return * (long *)           ((char *) address + description -> offset);
 		case ubytewa:          return * (unsigned char *)  ((char *) address + description -> offset);

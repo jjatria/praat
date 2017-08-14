@@ -255,18 +255,19 @@ static void VowelEditor_getF1F2FromXY (VowelEditor me, double x, double y, doubl
 	*f1 = my f1min * pow (my f1max / my f1min, 1.0 - y);
 }
 
-#define REPRESENTNUMBER(x,i) (((x) == NUMundefined) ? U" undef" : Melder_pad (6, Melder_fixed (x, 1)))
+#define REPRESENTNUMBER(x,i) (isundef (x) ? U" undef" : Melder_pad (6, Melder_fixed (x, 1)))
 static void appendF1F2F0 (MelderString *statusInfo, const char32 *intro, double f1, double f2, double f0, const char32 *ending) {
 	MelderString_append (statusInfo, intro, REPRESENTNUMBER (f1, 1), U", ", REPRESENTNUMBER (f2, 2), U", ", REPRESENTNUMBER (f0, 3), ending);
 }
 
 static double getRealFromTextWidget (GuiText me) {
-	double value = NUMundefined;
+	double value = undefined;
 	char32 *dirty = GuiText_getString (me);
 	try {
 		Interpreter_numericExpression (nullptr, dirty, & value);
 	} catch (MelderError) {
-		Melder_clearError (); value = NUMundefined;
+		Melder_clearError ();
+		value = undefined;
 	}
 	Melder_free (dirty);
 	return value;
@@ -288,7 +289,7 @@ static void checkF1F2 (VowelEditor me, double *f1, double *f2) {
 }
 
 static void checkF0 (structVowelEditor_F0 *f0p, double *f0) {
-	if (! NUMdefined (*f0)) {
+	if (isundef (*f0)) {
 		*f0 = f0p -> start;
 	}
 	if (*f0 > f0p -> maximum) {
@@ -325,11 +326,11 @@ static void VowelEditor_getF3F4 (VowelEditor me, double f1, double f2, double *f
 
 static void VowelEditor_updateF0Info (VowelEditor me) {
 	double f0 = getRealFromTextWidget (my f0TextField);
-	checkF0 (&my f0, &f0);
+	checkF0 (& my f0, & f0);
 	GuiText_setString (my f0TextField, Melder_double (f0));
 	my f0.start = f0;
 	double slopeOctPerSec = getRealFromTextWidget (my f0SlopeTextField);
-	if (! NUMdefined (slopeOctPerSec)) {
+	if (isundef (slopeOctPerSec)) {
 		slopeOctPerSec = f0default.slopeOctPerSec;
 	}
 	my f0.slopeOctPerSec = slopeOctPerSec;
@@ -338,7 +339,7 @@ static void VowelEditor_updateF0Info (VowelEditor me) {
 
 static void VowelEditor_updateExtendDuration (VowelEditor me) {
 	double extend = getRealFromTextWidget (my extendTextField);
-	if (! NUMdefined (extend) || extend <= MINIMUM_SOUND_DURATION || extend > my maximumDuration) {
+	if (isundef (extend) || extend <= MINIMUM_SOUND_DURATION || extend > my maximumDuration) {
 		extend = MINIMUM_SOUND_DURATION;
 	}
 	GuiText_setString (my extendTextField, Melder_double (extend));
@@ -347,20 +348,20 @@ static void VowelEditor_updateExtendDuration (VowelEditor me) {
 
 static double VowelEditor_updateDurationInfo (VowelEditor me) {
 	double duration = getRealFromTextWidget (my durationTextField);
-	if (! NUMdefined (duration) || duration < MINIMUM_SOUND_DURATION) {
+	if (isundef (duration) || duration < MINIMUM_SOUND_DURATION) {
 		duration = MINIMUM_SOUND_DURATION;
 	}
 	GuiText_setString (my durationTextField, Melder_double (MICROSECPRECISION (duration)));
 	return duration;
 }
 
-static void Sound_fadeIn (Sound me, double duration, int fromFirstNonZeroSample) {
+static void Sound_fadeIn (Sound me, double duration, bool fromFirstNonZeroSample) {
 	long istart = 1, numberOfSamples = (long) floor (duration / my dx);   // ppgb: waarom afronden naar beneden?
 
 	if (numberOfSamples < 2) {
 		return;
 	}
-	if (fromFirstNonZeroSample != 0) {
+	if (fromFirstNonZeroSample) {
 		// If the first part of the sound is very low level we put sample values to zero and
 		// start windowing from the position where the amplitude is above the minimum level.
 		// WARNING: this part is special for the artificial vowels because
@@ -438,7 +439,7 @@ static void VowelEditor_shiftF1F2 (VowelEditor me, double f1_st, double f2_st) {
 		FormantPoint fp = ft -> points.at [i];
 		double f1 = fp -> formant [0], f2 = fp -> formant [1];
 
-		f1 *= pow (2, f1_st / 12);
+		f1 *= pow (2, f1_st / 12.0);
 		if (f1 < my f1min) {
 			f1 = my f1min;
 		}
@@ -446,9 +447,9 @@ static void VowelEditor_shiftF1F2 (VowelEditor me, double f1_st, double f2_st) {
 			f1 = my f1max;
 		}
 		fp -> formant[0] = f1;
-		fp -> bandwidth[0] = f1 / 10;
+		fp -> bandwidth[0] = f1 / 10.0;
 
-		f2 *= pow (2, f2_st / 12);
+		f2 *= pow (2, f2_st / 12.0);
 		if (f2 < my f2min) {
 			f2 = my f2min;
 		}
@@ -456,7 +457,7 @@ static void VowelEditor_shiftF1F2 (VowelEditor me, double f1_st, double f2_st) {
 			f2 = my f2max;
 		}
 		fp -> formant[1] = f2;
-		fp -> bandwidth[1] = f2 / 10;
+		fp -> bandwidth[1] = f2 / 10.0;
 		double f3, b3, f4, b4;
 		VowelEditor_getF3F4 (me, f1, f2, &f3, &b3, &f4, &b4);
 		fp -> formant[2] = f3;
@@ -513,7 +514,7 @@ static autoSound VowelEditor_createTarget (VowelEditor me) {
 		VowelEditor_updateVowel (me);   // update pitch and duration
 		autoSound thee = Vowel_to_Sound_pulses (my vowel.get(), 44100.0, 0.7, 0.05, 30);
 		Vector_scale (thee.get(), 0.99);
-		Sound_fadeIn (thee.get(), 0.005, 1);
+		Sound_fadeIn (thee.get(), 0.005, true);
 		Sound_fadeOut (thee.get(), 0.005);
 		return thee;
 	} catch (MelderError) {
@@ -624,7 +625,7 @@ static void copyVowelMarksInPreferences_volatile (Table me) {
 		long col_f2 = Table_getColumnIndexFromColumnLabel (me, U"F2");
 		long col_size = Table_getColumnIndexFromColumnLabel (me, U"Size");
 		autoMelderString mark;
-		for (long i = 1; i <= VowelEditor_MAXIMUM_MARKERS; i++) {
+		for (long i = 1; i <= VowelEditor_MAXIMUM_MARKERS; i ++) {
 			if (i <= numberOfRows) {
 				MelderString_copy (&mark, Table_getStringValue_Assert (me, i, col_vowel), U"\t",
 					Table_getStringValue_Assert (me, i, col_f1), U"\t",
@@ -634,9 +635,9 @@ static void copyVowelMarksInPreferences_volatile (Table me) {
 				if (length >= Preferences_STRING_BUFFER_SIZE) {
 					Melder_throw (U"Preference mark ", i, U" contains too many characters");
 				}
-				str32cpy (prefs.mark[i-1], mark.string);
+				str32cpy (prefs.mark [i - 1], mark.string);
 			} else {
-				str32cpy (prefs.mark[i-1], U"x");
+				str32cpy (prefs.mark [i - 1], U"x");
 			}
 		}
 	}
@@ -687,15 +688,15 @@ static void VowelEditor_createTableFromVowelMarksInPreferences (VowelEditor me)
 	try {
 		autoTable newMarks = Table_createWithColumnNames (0, U"Vowel F1 F2 Size");
 		long nmarksFound = 0;
-		for (long i = 1; i <= numberOfRows; i++) {
-			autoMelderTokens rowi (prefs.mark[i-1]);
+		for (long i = 1; i <= numberOfRows; i ++) {
+			autoMelderTokens rowi (prefs.mark [i - 1]);
 			long numberOfTokens = rowi.count();
 			if (numberOfTokens < 4) { // we are done
 				break;
 			}
 			Table_appendRow (newMarks.get());
-			for (long j = 1; j <= 4; j++) {
-				Table_setStringValue (newMarks.get(), i, j, rowi[j]);
+			for (long j = 1; j <= 4; j ++) {
+				Table_setStringValue (newMarks.get(), i, j, rowi [j]);
 			}
 			nmarksFound++;
 		}
@@ -800,9 +801,9 @@ static void VowelEditor_drawBackground (VowelEditor me, Graphics g) {
 		VowelEditor_getXYFromF1F2 (me, my f1max, my f1max, &x2, &y2);
 		if (x2 >= 0.0 && x2 <= 1.0) {
 			autoPolygon p = Polygon_create (3);
-			p -> x[1] = x1; p -> y[1] = y1;
-			p -> x[2] = x2; p -> y[2] = y2;
-			p -> x[3] =  1; p -> y[3] =  0;
+			p -> x [1] = x1;    p -> y [1] = y1;
+			p -> x [2] = x2;    p -> y [2] = y2;
+			p -> x [3] = 1.0;   p -> y [3] = 0.0;
 			Graphics_fillArea (g, p -> numberOfPoints, & p -> x[1], & p -> y[1]);
 			// Polygon_paint does not work because of use of Graphics_setInner.
 			Graphics_line (g, x1, y1, x2, y2);
@@ -1176,7 +1177,7 @@ static void gui_button_cb_publish (VowelEditor me, GuiButtonEvent /* event */) {
 
 static void gui_button_cb_reverse (VowelEditor me, GuiButtonEvent /* event */) {
 	VowelEditor_Vowel_reverseFormantTier (me);
-	struct structGuiButtonEvent play_event { 0 };
+	structGuiButtonEvent play_event { };
 	gui_button_cb_play (me, & play_event);
 }
 
@@ -1186,7 +1187,7 @@ static void gui_drawingarea_cb_expose (VowelEditor me, GuiDrawingArea_ExposeEven
 	double ts = my vowel -> xmin, te = my vowel -> xmax;
 	FormantTier ft = my vowel -> ft.get();
 	Melder_assert (ft);
-	static MelderString statusInfo { 0 };
+	static MelderString statusInfo { };
 	if (! my graphics) {
 		return;   // could be the case in the very beginning
 	}
@@ -1307,7 +1308,7 @@ static void gui_drawingarea_cb_click (VowelEditor me, GuiDrawingArea_ClickEvent 
 		checkXY (&x, &y);
 		// If the new point equals the previous one: no tier update
 		if (xb == x && yb == y) {
-			iskipped++;
+			iskipped ++;
 			continue;
 		}
 		// Add previous point only if at least one previous event was skipped...

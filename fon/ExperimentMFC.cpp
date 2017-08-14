@@ -1,6 +1,6 @@
 /* ExperimentMFC.cpp
  *
- * Copyright (C) 2001-2011,2013,2016 Paul Boersma
+ * Copyright (C) 2001-2011,2013,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ static void readSound (ExperimentMFC me, const char32 *fileNameHead, const char3
 {
 	char32 fileNameBuffer [256], *fileNames = & fileNameBuffer [0];
 	Melder_sprint (fileNameBuffer,256, *name);
-	structMelderFile file = { 0 };
+	structMelderFile file { };
 	/*
 	 * The following conversion is needed when fileNameHead is an absolute path,
 	 * and the stimulus names contain slashes for relative paths.
@@ -133,8 +133,10 @@ static void readSound (ExperimentMFC me, const char32 *fileNameHead, const char3
 		/*
 		 * Check whether all sounds have the same number of channels.
 		 */
-		if (my numberOfChannels == 0) {
-			my numberOfChannels = substimulus -> ny;
+		if (substimulus -> ny > INT16_MAX) {
+			Melder_throw (U"An ExperimentMFC cannot handle sounds with more than ", INT16_MAX, U" channels.");
+		} else if (my numberOfChannels == 0) {
+			my numberOfChannels = int16 (substimulus -> ny);   // guarded cast
 		} else if (substimulus -> ny != my numberOfChannels) {
 			Melder_throw (U"The sound in file ", & file, U" has a different number of channels than some other sound.");
 		}

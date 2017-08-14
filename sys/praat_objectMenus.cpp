@@ -1,6 +1,6 @@
 /* praat_objectMenus.cpp
  *
- * Copyright (C) 1992-2012,2013,2014,2015,2016 Paul Boersma
+ * Copyright (C) 1992-2012,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ DO
 	static MelderString string;
 	MelderString_copy (& string, newName);
 	praat_cleanUpName (string.string);
-	static MelderString fullName { 0 };
+	static MelderString fullName { };
 	MelderString_copy (& fullName, Thing_className (OBJECT), U" ", string.string);
 	if (! str32equ (fullName.string, FULL_NAME)) {
 		Melder_free (FULL_NAME), FULL_NAME = Melder_dup_f (fullName.string);
@@ -266,7 +266,7 @@ FORM (STRING_praat_calculator, U"Calculator", U"Calculator") {
 	LABEL (U"", U"For details, click Help.")
 	OK
 DO
-	struct Formula_Result result;
+	Formula_Result result;
 	if (! interpreter) {
 		autoInterpreter tempInterpreter = Interpreter_create (nullptr, nullptr);
 		Interpreter_anyExpression (tempInterpreter.get(), expression, & result);
@@ -282,8 +282,12 @@ DO
 			Melder_free (result. result.stringResult);
 		} break;
 		case kFormula_EXPRESSION_TYPE_NUMERIC_VECTOR: {
+			Melder_information (result. result.numericVectorResult);
+			result. result.numericVectorResult. reset();
 		} break;
 		case kFormula_EXPRESSION_TYPE_NUMERIC_MATRIX: {
+			Melder_information (result. result.numericMatrixResult);
+			result. result.numericMatrixResult. reset();
 		}
 	}
 END }
@@ -481,7 +485,7 @@ FORM (PRAAT_ManPages_saveToHtmlDirectory, U"Save all pages as HTML files", nullp
 	LABEL (U"", U"Type a directory name:")
 	TEXTFIELD4 (directory, U"directory", U"")
 OK
-	structMelderDir currentDirectory { { 0 } };
+	structMelderDir currentDirectory { };
 	Melder_getDefaultDir (& currentDirectory);
 	SET_STRING (U"directory", Melder_dirToPath (& currentDirectory))
 DO
@@ -535,7 +539,7 @@ FORM (HELP_WriteManualToHtmlDirectory, U"Save all pages as HTML files", nullptr)
 	LABEL (U"", U"Type a directory name:")
 	TEXTFIELD4 (directory, U"directory", U"")
 OK
-	structMelderDir currentDirectory { { 0 } };
+	structMelderDir currentDirectory { };
 	Melder_getDefaultDir (& currentDirectory);
 	SET_STRING (U"directory", Melder_dirToPath (& currentDirectory))
 DO
@@ -572,7 +576,7 @@ static void searchProc () {
 	HELP_SearchManual (nullptr, 0, nullptr, nullptr, nullptr, nullptr, false, nullptr);
 }
 
-static MelderString itemTitle_about { 0 };
+static MelderString itemTitle_about { };
 
 static autoDaata scriptRecognizer (int nread, const char *header, MelderFile file) {
 	const char32 *name = MelderFile_name (file);

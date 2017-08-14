@@ -20,6 +20,11 @@ asserterror A vector index cannot be greater than the number of elements (here 1
 a# [20] = 45786457
 @pass: "Vector index out of bounds error"
 
+# Passing function to function
+# These use ok_formula because procedures don't parse commas properly
+@ok_formula: "numberOfRows (zero##(5, 6)) == 5", "Number of rows in 2D matrix"
+@ok_formula: "numberOfColumns (zero##(5, 6)) == 6", "Number of columns in 2D matrix"
+
 a## = zero##(5, 6)
 @is: numberOfRows(a##), 5,
    ... "numberOfRows() on 2D matrix"
@@ -27,14 +32,10 @@ a## = zero##(5, 6)
 @is: numberOfColumns(a##), 6,
    ... "numberOfColumns() on 2D matrix"
 
-# Must use a temporary variable because of faulty parsing of
-# nested commas in arguments to procedure
-x = a## [3, 4]
-@is: x, 0, "Indexed query on 2D matrix of zeros"
+@ok_formula: "a## [3, 4] == 0", "Indexed query on 2D matrix of zeros"
 
 a## [5, 6] = 567
-x = a## [5, 6]
-@is: x, 567, "Indexed query on 2D matrix"
+@ok_formula: "a##[5,6] == 567", "Indexed query without spaces"
 
 c# = linear# (0, 100, 101)
 @is: c# [98], 97,

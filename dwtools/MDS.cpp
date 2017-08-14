@@ -1,6 +1,6 @@
 /* MDS.cpp
  *
- * Copyright (C) 1993-2016 David Weenink, 2015 Paul Boersma
+ * Copyright (C) 1993-2016 David Weenink, 2015,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -201,7 +201,7 @@ autoSimilarity DistanceList_to_Similarity_cc (DistanceList me, Weight w) {
 
 		for (long i = 1; i <= my size; i ++) {
 			Distance di = my at [i];
-			char32 *name = Thing_getName (di);
+			const char32 *name = Thing_getName (di);
 			TableOfReal_setRowLabel (thee.get(), i, name);
 			TableOfReal_setColumnLabel (thee.get(), i, name);
 			thy data[i][i] = 1;
@@ -868,11 +868,11 @@ static double Dissimilarity_getAverage (Dissimilarity me) {
 			}
 		}
 	}
-	return numberOfPositives > 0 ? sum /= numberOfPositives : NUMundefined;
+	return ( numberOfPositives > 0 ? sum /= numberOfPositives : undefined );
 }
 
 double Dissimilarity_getAdditiveConstant (Dissimilarity me) {
-	double additiveConstant = NUMundefined;
+	double additiveConstant = undefined;
 	try {
 		long nPoints = my numberOfRows, nPoints2 = 2 * nPoints;
 
@@ -883,7 +883,7 @@ double Dissimilarity_getAdditiveConstant (Dissimilarity me) {
 		}
 
 		additiveConstant = Dissimilarity_getAverage (me);
-		if (additiveConstant == NUMundefined) {
+		if (isundef (additiveConstant)) {
 			Melder_throw (U"There are no positive dissimilarities.");
 		}
 
@@ -1024,12 +1024,12 @@ autoDissimilarity Similarity_to_Dissimilarity (Similarity me, double maximumDiss
 
 autoDistance Dissimilarity_to_Distance (Dissimilarity me, int scale) {
 	try {
-		double additiveConstant = 0;
+		double additiveConstant = 0.0;
 
 		autoDistance thee = Distance_create (my numberOfRows);
 		TableOfReal_copyLabels (me, thee.get(), 1, 1);
 		if (scale == MDS_ORDINAL) {
-			if ((additiveConstant = Dissimilarity_getAdditiveConstant (me)) == NUMundefined) {
+			if (isundef (additiveConstant = Dissimilarity_getAdditiveConstant (me))) {
 				Melder_warning (U"Dissimilarity_to_Distance: could not determine \"additive constant\", the average dissimilarity was used as its value.");
 			}
 		}
@@ -1558,7 +1558,7 @@ autoDissimilarityList DistanceList_to_DissimilarityList (DistanceList me) {
 	try {
 		autoDissimilarityList thee = DissimilarityList_create ();
 		for (long i = 1; i <= my size; i ++) {
-			char32 *name = Thing_getName (my at [i]);
+			const char32 *name = Thing_getName (my at [i]);
 			autoDissimilarity him = Distance_to_Dissimilarity (my at [i]);
 			Thing_setName (him.get(), name ? name : U"untitled");
 			thy addItem_move (him.move());
@@ -1575,7 +1575,7 @@ autoDistanceList DissimilarityList_to_DistanceList (DissimilarityList me, int me
 
 		for (long i = 1; i <= my size; i ++) {
 			autoDistance him = Dissimilarity_to_Distance (my at [i], measurementLevel == MDS_ORDINAL);
-			char32 *name = Thing_getName (my at [i]);
+			const char32 *name = Thing_getName (my at [i]);
 			Thing_setName (him.get(), name ? name : U"untitled");
 			thy addItem_move (him.move());
 		}
@@ -1625,7 +1625,7 @@ static void smacof_guttmanTransform (Configuration cx, Configuration cz, Distanc
 }
 
 double Distance_Weight_stress (Distance fit, Distance conf, Weight weight, int stressMeasure) {
-	double eta_fit, eta_conf, rho, stress = NUMundefined, denum, tmp;
+	double eta_fit, eta_conf, rho, stress = undefined, denum, tmp;
 
 	Distance_Weight_rawStressComponents (fit, conf, weight, &eta_fit, &eta_conf, &rho);
 
@@ -1709,7 +1709,7 @@ void Distance_Weight_rawStressComponents (Distance fit, Distance conf, Weight we
 
 double Dissimilarity_Configuration_Transformator_Weight_stress (Dissimilarity d, Configuration c, Transformator t, Weight w, int stressMeasure) {
 	long nPoints = d -> numberOfRows;
-	double stress = NUMundefined;
+	double stress = undefined;
 
 	if (nPoints < 1 || nPoints != c -> numberOfRows  || nPoints != t -> numberOfPoints || (w && nPoints != w -> numberOfRows)) {
 		Melder_throw (U"Incorrect number of points.");
@@ -2939,7 +2939,7 @@ void drawSplines (Graphics g, double low, double high, double ymin, double ymax,
 	}
 	Graphics_unsetInner (g);
 	if (garnish) {
-		static MelderString ts { 0 };
+		static MelderString ts { };
 		long lastKnot = splineType == MDS_ISPLINE ? numberOfKnots - 2 : numberOfKnots;
 		Graphics_drawInnerBox (g);
 		Graphics_textLeft (g, false, splineType == MDS_MSPLINE ? U"\\s{M}\\--spline" : U"\\s{I}\\--spline");

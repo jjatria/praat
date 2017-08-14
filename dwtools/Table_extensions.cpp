@@ -1,6 +1,6 @@
 /* Table_extensions.cpp
 	 *
- * Copyright (C) 1997-2017 David Weenink
+ * Copyright (C) 1997-2017 David Weenink, Paul Boersma 2017
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -3229,9 +3229,9 @@ void Table_horizontalErrorBarsPlotWhere (Table me, Graphics g, long xcolumn, lon
 			return;
 		}
 		long numberOfSelectedRows = 0;
-		autoNUMvector<long> selectedRows (Table_findRowsMatchingCriterion (me, formula, interpreter, &numberOfSelectedRows), 1);	
+		autoNUMvector<long> selectedRows (Table_findRowsMatchingCriterion (me, formula, interpreter, & numberOfSelectedRows), 1);
 		if (ymin >= ymax) {
-			Table_columnExtremesFromSelectedRows (me, ycolumn, selectedRows.peek(), numberOfSelectedRows, &ymin, &ymax);
+			Table_columnExtremesFromSelectedRows (me, ycolumn, selectedRows.peek(), numberOfSelectedRows, & ymin, & ymax);
 			if (ymin >= ymax) {
 				ymin -= 1.0;
 				ymax += 1.0;
@@ -3239,13 +3239,13 @@ void Table_horizontalErrorBarsPlotWhere (Table me, Graphics g, long xcolumn, lon
 		}
 		double x1min, x1max;
 		if (xmin >= xmax) {
-			Table_columnExtremesFromSelectedRows (me, xcolumn, selectedRows.peek(), numberOfSelectedRows, &xmin, &xmax);
+			Table_columnExtremesFromSelectedRows (me, xcolumn, selectedRows.peek(), numberOfSelectedRows, & xmin, & xmax);
 			if (xci_min > 0) {
-				Table_columnExtremesFromSelectedRows (me, xci_min, selectedRows.peek(), numberOfSelectedRows, &x1min, &x1max);
+				Table_columnExtremesFromSelectedRows (me, xci_min, selectedRows.peek(), numberOfSelectedRows, & x1min, & x1max);
 				xmin -= x1max;
 			}
 			if (xci_max > 0) {
-				Table_columnExtremesFromSelectedRows (me, xci_max, selectedRows.peek(), numberOfSelectedRows, &x1min, &x1max);
+				Table_columnExtremesFromSelectedRows (me, xci_max, selectedRows.peek(), numberOfSelectedRows, & x1min, & x1max);
 				xmax += x1max;
 			}
 			if (xmin >= xmax) {
@@ -3256,22 +3256,24 @@ void Table_horizontalErrorBarsPlotWhere (Table me, Graphics g, long xcolumn, lon
 		Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 		Graphics_setInner (g);
 		double dy = Graphics_dyMMtoWC (g, bar_mm);
-		for (long row = 1; row <= numberOfSelectedRows; row++) {
-			double x = Table_getNumericValue_Assert (me, selectedRows [row], xcolumn);
-			double y = Table_getNumericValue_Assert (me, selectedRows [row], ycolumn);
-			double dx1 = ( xci_min > 0 ? Table_getNumericValue_Assert (me, selectedRows [row], xci_min) : 0 );
-			double dx2 = ( xci_max > 0 ? Table_getNumericValue_Assert (me, selectedRows [row], xci_max) : 0 );
+		for (long irow = 1; irow <= numberOfSelectedRows; irow ++) {
+			double x = Table_getNumericValue_Assert (me, selectedRows [irow], xcolumn);
+			double y = Table_getNumericValue_Assert (me, selectedRows [irow], ycolumn);
+			double dx1 =
+				xci_min > 0 ? Table_getNumericValue_Assert (me, selectedRows [irow], xci_min) : 0.0;
+			double dx2 =
+				xci_max > 0 ? Table_getNumericValue_Assert (me, selectedRows [irow], xci_max) : 0.0;
 			double x1 = x - dx1, x2 = x + dx2, xc1, yc1, xc2, yc2;
 
 			if (x <= xmax && x >= xmin && y <= ymax && y >= ymin) {
 				// horizontal confidence interval
-				if (intervalsIntersect (x1, x2, xmin, xmax, &xc1, &xc2)) {
+				if (intervalsIntersect (x1, x2, xmin, xmax, & xc1, & xc2)) {
 					Graphics_line (g, xc1, y, xc2, y);
-					if (dy > 0 && intervalsIntersect (y - dy / 2, y + dy / 2, ymin, ymax, &yc1, &yc2)) {
-						if (xc1 >= xmin && dx1 > 0) {
+					if (dy > 0 && intervalsIntersect (y - dy / 2.0, y + dy / 2.0, ymin, ymax, & yc1, & yc2)) {
+						if (xc1 >= xmin && dx1 > 0.0) {
 							Graphics_line (g, xc1, yc1, xc1, yc2);
 						}
-						if (xc2 <= xmax && dx2 > 0) {
+						if (xc2 <= xmax && dx2 > 0.0) {
 							Graphics_line (g, xc2, yc1, xc2, yc2);
 						}
 					}
@@ -3302,9 +3304,9 @@ void Table_verticalErrorBarsPlotWhere (Table me, Graphics g,
 			return;
 		}
 		long numberOfSelectedRows = 0;
-		autoNUMvector<long> selectedRows (Table_findRowsMatchingCriterion (me, formula, interpreter, &numberOfSelectedRows), 1);
+		autoNUMvector<long> selectedRows (Table_findRowsMatchingCriterion (me, formula, interpreter, & numberOfSelectedRows), 1);
 		if (xmin >= xmax) {
-			Table_columnExtremesFromSelectedRows (me, ycolumn, selectedRows.peek(), numberOfSelectedRows, &ymin, &ymax);
+			Table_columnExtremesFromSelectedRows (me, ycolumn, selectedRows.peek(), numberOfSelectedRows, & ymin, & ymax);
 			if (xmin >= xmax) {
 				xmin -= 1.0;
 				xmax += 1.0;
@@ -3312,13 +3314,13 @@ void Table_verticalErrorBarsPlotWhere (Table me, Graphics g,
 		}
 		double y1min, y1max;
 		if (ymin >= ymax) {
-			Table_columnExtremesFromSelectedRows (me, ycolumn, selectedRows.peek(), numberOfSelectedRows, &ymin, &ymax);
+			Table_columnExtremesFromSelectedRows (me, ycolumn, selectedRows.peek(), numberOfSelectedRows, & ymin, & ymax);
 			if (yci_min > 0) {
-				Table_columnExtremesFromSelectedRows (me, yci_min, selectedRows.peek(), numberOfSelectedRows, &y1min, &y1max);
+				Table_columnExtremesFromSelectedRows (me, yci_min, selectedRows.peek(), numberOfSelectedRows, & y1min, & y1max);
 				ymin -= y1max;
 			}
 			if (yci_max > 0) {
-				Table_columnExtremesFromSelectedRows (me, yci_max, selectedRows.peek(), numberOfSelectedRows, &y1min, &y1max);
+				Table_columnExtremesFromSelectedRows (me, yci_max, selectedRows.peek(), numberOfSelectedRows, & y1min, & y1max);
 				ymax += y1max;
 			}
 			if (ymin >= ymax) {
@@ -3329,18 +3331,20 @@ void Table_verticalErrorBarsPlotWhere (Table me, Graphics g,
 		Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 		Graphics_setInner (g);
 		double dx = Graphics_dxMMtoWC (g, bar_mm);
-		for (long row = 1; row <= numberOfSelectedRows; row++) {
-			double x  = Table_getNumericValue_Assert (me, selectedRows[row], xcolumn);
-			double y  = Table_getNumericValue_Assert (me, selectedRows[row], ycolumn);
-			double dy1 = yci_min > 0 ? Table_getNumericValue_Assert (me, selectedRows[row], yci_min) : 0.0;
-			double dy2 = yci_max > 0 ? Table_getNumericValue_Assert (me, selectedRows[row], yci_max) : 0.0;
+		for (long irow = 1; irow <= numberOfSelectedRows; irow ++) {
+			double x  = Table_getNumericValue_Assert (me, selectedRows [irow], xcolumn);
+			double y  = Table_getNumericValue_Assert (me, selectedRows [irow], ycolumn);
+			double dy1 =
+				yci_min > 0 ? Table_getNumericValue_Assert (me, selectedRows [irow], yci_min) : 0.0;
+			double dy2 =
+				yci_max > 0 ? Table_getNumericValue_Assert (me, selectedRows [irow], yci_max) : 0.0;
 			double y1 = y - dy1, y2 = y + dy2, xc1, yc1, xc2, yc2;
 
 			if (x <= xmax && x >= xmin && y <= ymax && y >= ymin) {
 				// vertical confidence interval
-				if (intervalsIntersect (y1, y2, ymin, ymax, &yc1, &yc2)) {
+				if (intervalsIntersect (y1, y2, ymin, ymax, & yc1, & yc2)) {
 					Graphics_line (g, x, yc1, x, yc2);
-					if (dx > 0 && intervalsIntersect (x - dx / 2.0, x + dx / 2.0, xmin, xmax, &xc1, &xc2)) {
+					if (dx > 0 && intervalsIntersect (x - dx / 2.0, x + dx / 2.0, xmin, xmax, & xc1, & xc2)) {
 						if (yc1 >= ymin && dy1 > 0.0) {
 							Graphics_line (g, xc1, yc1, xc2, yc1);
 						}
@@ -3368,13 +3372,13 @@ double Table_getMedianAbsoluteDeviation (Table me, long columnNumber)
 		Table_checkSpecifiedColumnNumberWithinRange (me, columnNumber);
 		Table_numericize_Assert (me, columnNumber);
 		if (my rows.size < 1) {
-			return NUMundefined;
+			return undefined;
 		}
 		autoNUMvector<double> data (1, my rows.size);
 		for (long irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
 			data[irow] = row -> cells[columnNumber].number;
-			if (data[irow] == NUMundefined) {
+			if (isundef (data [irow])) {
 				Melder_throw (me, U": the cell in row ", irow, U" of column \"",
 					my columnHeaders[columnNumber].label ? my columnHeaders[columnNumber].label : Melder_integer (columnNumber), U"\" is undefined.");
 			}
@@ -3538,7 +3542,7 @@ void Table_printAsAnovaTable (Table me) {
 		MelderString_copy (&s, Melder_padOrTruncate (width [1], row -> cells [1]. string), U"\t");
 		for (long j = 2; j <= 6; j ++) {
 			double value = row -> cells [j]. number;
-			if (NUMdefined (value)) {
+			if (isdefined (value)) {
 				MelderString_append (&s, Melder_pad (width [j], Melder_single (value)), j == 6 ? U"" : U"\t");
 			} else {
 				MelderString_append (&s, Melder_pad (width [j], U""), j == 6 ? U"" : U"\t");
@@ -3564,7 +3568,7 @@ void Table_printAsMeansTable (Table me) {
 		MelderString_copy (&s, Melder_padOrTruncate (10, row -> cells [1]. string), U"\t");
 		for (long j = 2; j <= my numberOfColumns; j++) {
 			double value = row -> cells[j].number;
-			if (value != NUMundefined) {
+			if (isdefined (value)) {
 				MelderString_append (&s,
 					Melder_pad (10, Melder_half (value)),
 					j == my numberOfColumns ? U"" : U"\t");
@@ -4108,7 +4112,7 @@ void Table_boxPlots (Table me, Graphics g, long dataColumn, long factorColumn, d
 }
 
 void Table_boxPlotsWhere (Table me, Graphics g,
-	char32 *dataColumns_string, long factorColumn, double ymin, double ymax,
+	const char32 *dataColumns_string, long factorColumn, double ymin, double ymax,
 	bool garnish, const char32 *formula, Interpreter interpreter)
 {
 	try {
@@ -4145,7 +4149,7 @@ void Table_boxPlotsWhere (Table me, Graphics g,
 				long numberOfDataInLevelColumn = 0;
 				for (long irow = 1; irow <= numberOfData; irow ++) {
 					if (si -> classIndex[irow] == ilevel) {
-						struct Formula_Result result;
+						Formula_Result result;
 						Formula_run (irow, dataColumns [icol], & result);
 						if (result.result.numericResult != 0.0) {
 							data [++ numberOfDataInLevelColumn] = Table_getNumericValue_Assert (me, irow, dataColumns [icol]);
@@ -4184,7 +4188,7 @@ void Table_distributionPlotWhere (Table me, Graphics g,
 		long n = my rows.size, mrow = 0;
 		autoMatrix thee = Matrix_create (1.0, 1.0, 1, 1.0, 1.0, 0.0, n + 1.0, n, 1.0, 1.0);
 		for (long irow = 1; irow <= n; irow ++) {
-			struct Formula_Result result;
+			Formula_Result result;
 			Formula_run (irow, dataColumn, & result);
 			if (result.result.numericResult != 0.0) {
 				thy z[1][++mrow] = Table_getNumericValue_Assert (me, irow, dataColumn);
@@ -4256,7 +4260,7 @@ long Table_getNumberOfRowsWhere (Table me, const char32 *formula, Interpreter in
 	long numberOfRows = 0;
 	Formula_compile (interpreter, me, formula, kFormula_EXPRESSION_TYPE_UNKNOWN, true);
 	for (long irow = 1; irow <= my rows.size; irow ++) {
-		struct Formula_Result result;
+		Formula_Result result;
 		Formula_run (irow, 1, & result);
 		if (result.result.numericResult != 0.0) {
 			numberOfRows++;
@@ -4275,7 +4279,7 @@ long *Table_findRowsMatchingCriterion (Table me, const char32 *formula, Interpre
 		autoNUMvector<long> selectedRows (1, numberOfMatches);
 		long n = 0;
 		for (long irow =1; irow <= my rows.size; irow ++) {
-			struct Formula_Result result;
+			Formula_Result result;
 			Formula_run (irow, 1, & result);
 			if (result.result.numericResult != 0.0) {
 				selectedRows[++n] = irow;
@@ -4544,7 +4548,7 @@ autoTable Table_extractRowsWhere (Table me, const char32 *formula, Interpreter i
 			thy columnHeaders [icol]. label = newLabel.transfer();
 		}
 		for (long irow = 1; irow <= my rows.size; irow ++) {
-			struct Formula_Result result;
+			Formula_Result result;
 			Formula_run (irow, 1, & result);
 			if (result.result.numericResult != 0.0) {
 				TableRow row = my rows.at [irow];
@@ -4712,7 +4716,7 @@ void Table_drawEllipsesWhere (Table me, Graphics g, long xcolumn, long ycolumn, 
 	}
 }
 
-autoTable Table_extractColumnRanges (Table me, char32 *ranges) {
+autoTable Table_extractColumnRanges (Table me, const char32 *ranges) {
 	try {
 		long numberOfSelectedColumns, numberOfRows = my rows.size;
 		autoNUMvector<long> columnRanges (NUMstring_getElementsOfRanges (ranges, my numberOfColumns, & numberOfSelectedColumns, nullptr, U"columnn number", true), 1);

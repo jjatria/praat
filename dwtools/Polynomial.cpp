@@ -62,19 +62,20 @@
 void Polynomial_evaluateWithDerivative (Polynomial me, double x, double *f, double *df) {
 	long double p = my coefficients [my numberOfCoefficients], dp = 0.0, xc = x;
 
-	for (long i = my numberOfCoefficients - 1; i > 0; i--) {
+	for (long i = my numberOfCoefficients - 1; i > 0; i --) {
 		dp = dp * xc + p;
 		p =  p * xc + my coefficients [i];
 	}
-	*f = (double) p; *df = (double) dp;
+	*f = (double) p;
+	*df = (double) dp;
 }
 
 /* Get value and derivative */
 static void Polynomial_evaluateWithDerivative_z (Polynomial me, dcomplex *z, dcomplex *p, dcomplex *dp) {
-	long double pr = my coefficients[my numberOfCoefficients], pi = 0;
-	long double dpr = 0, dpi = 0, x = z -> re, y = z -> im;
+	long double pr = my coefficients[my numberOfCoefficients], pi = 0.0;
+	long double dpr = 0.0, dpi = 0.0, x = z -> re, y = z -> im;
 
-	for (long i = my numberOfCoefficients - 1; i > 0; i--) {
+	for (long i = my numberOfCoefficients - 1; i > 0; i --) {
 		long double tr   = dpr;
 		dpr  =  dpr * x -  dpi * y + pr;
 		dpi  =   tr * y +  dpi * x + pi;
@@ -82,8 +83,8 @@ static void Polynomial_evaluateWithDerivative_z (Polynomial me, dcomplex *z, dco
 		pr   =   pr * x -   pi * y + my coefficients[i];
 		pi   =   tr * y +   pi * x;
 	}
-	p -> re =   (double) pr;  p -> im =  (double) pi;
-	dp -> re =  (double) dpr; dp -> im = (double) dpi;
+	*p = { (double) pr, (double) pi };
+	*dp = { (double) dpr, (double) dpi };
 }
 
 
@@ -97,11 +98,12 @@ void Polynomial_evaluateDerivatives (Polynomial me, double x, double *derivative
 		derivatives [j] = 0.0;
 	}
 	for (long i = degree - 1; i >= 0; i--) {
-		long n = (numberOfDerivatives < (degree - i) ? numberOfDerivatives : degree - i);
-		for (long j = n; j >= 1; j--) {
-			derivatives [j] = derivatives [j] * x +  derivatives [j - 1];
+		long n =
+			numberOfDerivatives < degree - i ? numberOfDerivatives : degree - i;
+		for (long j = n; j >= 1; j --) {
+			derivatives [j] = derivatives [j] * x + derivatives [j - 1];
 		}
-		derivatives [0] = derivatives [0] * x + my coefficients [i + 1];  // Evaluate polynomial (Horner)
+		derivatives [0] = derivatives [0] * x + my coefficients [i + 1];   // evaluate polynomial (Horner)
 	}
 	double fact = 1.0;
 	for (long j = 2; j <= numberOfDerivatives; j ++) {
@@ -131,14 +133,14 @@ static void polynomial_divide (double *u, long m, double *v, long n, double *q, 
 	// Copy u[1..m] into r[1..n] to prevent overwriting of u.
 	// Put the q coefficients to zero for cases n > m.
 
-	for (long k = 1; k <= m; k++) {
+	for (long k = 1; k <= m; k ++) {
 		r[k] = u[k];
-		q[k] = 0;
+		q[k] = 0.0;
 	}
 
-	for (long k = m - n + 1; k > 0; k--) { /* D1 */
+	for (long k = m - n + 1; k > 0; k --) { /* D1 */
 		q[k] = r[n + k - 1] / v[n]; /* D2 with u -> r*/
-		for (long j = n + k - 1; j >= k; j--) {
+		for (long j = n + k - 1; j >= k; j --) {
 			r[j] -= q[k] * v[j - k + 1];
 		}
 	}
@@ -156,16 +158,19 @@ static void Polynomial_polish_realroot (Polynomial me, double *x, long maxit) {
 		Polynomial_evaluateWithDerivative (me, *x, &p, &dp);
 		double fabsp = fabs (p);
 		if (fabsp > pmin || fabs (fabsp - pmin) < NUMfpp -> eps) {
-			// We stop because the approximation gets worse or we cannot get closer anymore
-			// Return previous (best) value for x.
-
-			*x = xbest; return;
-		}
-		pmin = fabsp; xbest = *x;
-		if (fabs (dp) == 0) {
+			/*
+				We stop, because the approximation is getting worse or we cannot get any closer.
+				Return the previous (hitherto best) value for x.
+			*/
+			*x = xbest;
 			return;
 		}
-		double dx = p / dp; /* Newton -Raphson */
+		pmin = fabsp;
+		xbest = *x;
+		if (fabs (dp) == 0.0) {
+			return;
+		}
+		double dx = p / dp;   // Newton-Raphson
 		*x -= dx;
 	}
 	// Melder_throw (U"Maximum number of iterations exceeded.");
@@ -183,16 +188,19 @@ static void Polynomial_polish_complexroot_nr (Polynomial me, dcomplex *z, long m
 		Polynomial_evaluateWithDerivative_z (me, z, &p, &dp);
 		double fabsp = dcomplex_abs (p);
 		if (fabsp > pmin || fabs (fabsp - pmin) < NUMfpp -> eps) {
-			// We stop because the approximation gets worse.
-			// Return previous (best) value for z.
-
-			*z = zbest; return;
-		}
-		pmin = fabsp; zbest = *z;
-		if (dcomplex_abs (dp) == 0) {
+			/*
+				We stop, because the approximation is getting worse.
+				Return the previous (hitherto best) value for z.
+			*/
+			*z = zbest;
 			return;
 		}
-		dcomplex dz = dcomplex_div (p , dp); /* Newton -Raphson */
+		pmin = fabsp;
+		zbest = *z;
+		if (dcomplex_abs (dp) == 0.0) {
+			return;
+		}
+		dcomplex dz = dcomplex_div (p, dp);   // Newton-Raphson
 		*z = dcomplex_sub (*z, dz);
 	}
 	// Melder_throw (U"Maximum number of iterations exceeded.");
@@ -224,36 +232,42 @@ static void NUMpolynomial_recurrence (double *pn, long degree, double a, double 
 static void svdcvm (double **v, long mfit, long ma, int *frozen, double *w, double **cvm) {
 	autoNUMvector<double> wti (1, mfit);
 
-	for (long i = 1; i <= mfit; i++) {
+	for (long i = 1; i <= mfit; i ++) {
 		if (w[i] != 0.0) {
 			wti[i] = 1.0 / (w[i] * w[i]);
+		} else {
+			;   // TODO: write up an explanation for why it is not necessary to do anything if w[i] is zero
 		}
 	}
-	for (long i = 1; i <= mfit; i++) {
-		for (long j = 1; j <= i; j++) {
-			double sum = 0;
-			for (long k = 1; k <= mfit; k++) {
+	for (long i = 1; i <= mfit; i ++) {
+		for (long j = 1; j <= i; j ++) {
+			long double sum = 0.0;
+			for (long k = 1; k <= mfit; k ++) {
 				sum += v[i][k] * v[j][k] * wti[k];
 			}
-			cvm[j][i] = cvm[i][j] = sum;
+			cvm[j][i] = cvm[i][j] = (double) sum;
 		}
 	}
 
-	for (long i = mfit + 1; i <= ma; i++) {
-		for (long j = 1; j <= i; j++) {
-			cvm[j][i] = cvm[i][j] = 0;
+	for (long i = mfit + 1; i <= ma; i ++) {
+		for (long j = 1; j <= i; j ++) {
+			cvm[j][i] = cvm[i][j] = 0.0;
 		}
 	}
 
 	long k = mfit;
-	for (long j = ma; j > 0; j--) {
+	for (long j = ma; j > 0; j --) {
 		//			if (! frozen || ! frozen[i]) why i?? TODO
 		if (! frozen || ! frozen[j]) {
-			for (long i = 1; i <= ma; i++) {
-				double t = cvm[i][k]; cvm[i][k] = cvm[i][j]; cvm[i][j] = t;
+			for (long i = 1; i <= ma; i ++) {
+				double t = cvm[i][k];
+				cvm[i][k] = cvm[i][j];
+				cvm[i][j] = t;
 			}
-			for (long i = 1; i <= ma; i++) {
-				double t = cvm[k][i]; cvm[k][i] = cvm[j][i]; cvm[j][i] = t;
+			for (long i = 1; i <= ma; i ++) {
+				double t = cvm[k][i];
+				cvm[k][i] = cvm[j][i];
+				cvm[j][i] = t;
 			}
 			k--;
 		}
@@ -266,18 +280,18 @@ Thing_implement (FunctionTerms, Function, 0);
 
 double structFunctionTerms :: v_evaluate (double x) {
 	(void) x;
-	return NUMundefined;
+	return undefined;
 }
 
 void structFunctionTerms :: v_evaluate_z (dcomplex *z, dcomplex *p) {
 	(void) z;
-	p -> re = p -> im = NUMundefined;
+	p -> re = p -> im = undefined;
 }
 
 void structFunctionTerms :: v_evaluateTerms (double x, double terms[]) {
 	(void) x;
 	for (long i = 1; i <= numberOfCoefficients; i++) {
-		terms[i] = NUMundefined;
+		terms [i] = undefined;
 	}
 }
 
@@ -940,7 +954,7 @@ double structLegendreSeries :: v_evaluate (double x) {
 	// Transform x from domain [xmin, xmax] to domain [-1, 1]
 
 	if (x < xmin || x > xmax) {
-		return NUMundefined;
+		return undefined;
 	}
 
 	double pim1 = x = (2 * x - xmin - xmax) / (xmax - xmin);
@@ -962,7 +976,7 @@ double structLegendreSeries :: v_evaluate (double x) {
 void structLegendreSeries :: v_evaluateTerms (double x, double terms[]) {
 	if (x < xmin || x > xmax) {
 		for (long i = 1; i <= numberOfCoefficients; i++) {
-			terms[i] = NUMundefined;
+			terms[i] = undefined;
 		}
 		return;
 	}
@@ -1293,7 +1307,7 @@ double Polynomial_findOneSimpleRealRoot_ridders (Polynomial me, double xmin, dou
 }
 
 void Polynomial_divide_firstOrderFactor (Polynomial me, double factor, double *p_remainder) { // P(x)/(x-a)
-	double remainder = NUMundefined;
+	double remainder = undefined;
 	if (my numberOfCoefficients > 1) {
 		remainder = my coefficients [my numberOfCoefficients];
 		for (long j = my numberOfCoefficients - 1; j > 0; j --) {
@@ -1414,7 +1428,7 @@ Thing_implement (ChebyshevSeries, FunctionTerms, 0);
 */
 double structChebyshevSeries :: v_evaluate (double x) {
 	if (x < xmin || x > xmax) {
-		return NUMundefined;
+		return undefined;
 	}
 
 	double d1 = 0, d2 = 0;
@@ -1438,7 +1452,7 @@ double structChebyshevSeries :: v_evaluate (double x) {
 void structChebyshevSeries :: v_evaluateTerms (double x, double *terms) {
 	if (x < xmin || x > xmax) {
 		for (long i = 1; i <= numberOfCoefficients; i++) {
-			terms[i] = NUMundefined;
+			terms[i] = undefined;
 		}
 		return;
 	}
@@ -1565,7 +1579,7 @@ void FunctionTerms_and_RealTier_fit (FunctionTerms me, RealTier thee, int freeze
 		autoSVD svd = SVD_create (numberOfData, numberOfFreeParameters);
 
 		double sigma = RealTier_getStandardDeviation_points (thee, my xmin, my xmax);
-		if (sigma == NUMundefined) {
+		if (isundef (sigma)) {
 			Melder_throw (U"Not enough data points in fit interval.");
 		}
 
@@ -1670,7 +1684,7 @@ static double NUMmspline2 (double points[], long numberOfPoints, long order, lon
 	Melder_assert (numberOfPoints > 2 && order > 0 && index > 0);
 
 	if (index > numberOfSplines) {
-		return NUMundefined;
+		return undefined;
 	}
 
 	/*

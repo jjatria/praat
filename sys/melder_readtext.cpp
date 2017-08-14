@@ -1,6 +1,6 @@
 /* melder_readtext.cpp
  *
- * Copyright (C) 2008-2011,2014,2015 Paul Boersma
+ * Copyright (C) 2008-2011,2014,2015,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 #include "melder.h"
 #include "UnicodeData.h"
 #include "abcio.h"
-#define my  me ->
 
 char32 MelderReadText_getChar (MelderReadText me) {
 	if (my string32) {
@@ -222,12 +221,12 @@ static char32 * _MelderFile_readText (MelderFile file, char **string8) {
 			text.reset (Melder_malloc (char32, length + 1));
 			if (type == 1) {
 				for (int64 i = 0; i < length; i ++) {
-					char16 kar1 = bingetu2 (f);
+					char16 kar1 = bingetu16 (f);
 					if (kar1 < 0xD800) {
 						text [i] = (char32) kar1;   // convert up without sign extension
 					} else if (kar1 < 0xDC00) {
 						length --;
-						char16 kar2 = bingetu2 (f);
+						char16 kar2 = bingetu16 (f);
 						if (kar2 >= 0xDC00 && kar2 <= 0xDFFF) {
 							text [i] = (char32) (0x010000 +
 								(char32) (((char32) kar1 & 0x0003FF) << 10) +
@@ -243,12 +242,12 @@ static char32 * _MelderFile_readText (MelderFile file, char **string8) {
 				}
 			} else {
 				for (int64 i = 0; i < length; i ++) {
-					char16 kar1 = bingetu2LE (f);
+					char16 kar1 = bingetu16LE (f);
 					if (kar1 < 0xD800) {
 						text [i] = (char32) kar1;   // convert up without sign extension
 					} else if (kar1 < 0xDC00) {
 						length --;
-						char16 kar2 = bingetu2LE (f);
+						char16 kar2 = bingetu16LE (f);
 						if (kar2 >= 0xDC00 && kar2 <= 0xDFFF) {
 							text [i] = (char32) (0x010000 +
 								(char32) (((char32) kar1 & 0x0003FF) << 10) +

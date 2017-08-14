@@ -1,6 +1,6 @@
 /* Table.cpp
  *
- * Copyright (C) 2002-2012,2013,2014,2015,2016 Paul Boersma
+ * Copyright (C) 2002-2012,2013,2014,2015,2016,2017 Paul Boersma
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,10 +57,10 @@ const char32 * structTable :: v_getColStr (long columnNumber) {
 }
 
 double structTable :: v_getMatrix (long rowNumber, long columnNumber) {
-	if (rowNumber < 1 || rowNumber > our rows.size) return NUMundefined;
-	if (columnNumber < 1 || columnNumber > our numberOfColumns) return NUMundefined;
+	if (rowNumber < 1 || rowNumber > our rows.size) return undefined;
+	if (columnNumber < 1 || columnNumber > our numberOfColumns) return undefined;
 	char32 *stringValue = our rows.at [rowNumber] -> cells [columnNumber]. string;
-	return stringValue ? Melder_atof (stringValue) : NUMundefined;
+	return stringValue ? Melder_atof (stringValue) : undefined;
 }
 
 const char32 * structTable :: v_getMatrixStr (long rowNumber, long columnNumber) {
@@ -435,7 +435,7 @@ void Table_numericize_Assert (Table me, long columnNumber) {
 			TableRow row = my rows.at [irow];
 			const char32 *string = row -> cells [columnNumber]. string;
 			row -> cells [columnNumber]. number =
-				! string || string [0] == U'\0' || (string [0] == U'?' && string [1] == U'\0') ? NUMundefined :
+				! string || string [0] == U'\0' || (string [0] == U'?' && string [1] == U'\0') ? undefined :
 				Melder_atof (string);
 		}
 	} else {
@@ -465,7 +465,7 @@ static void Table_numericize_checkDefined (Table me, long columnNumber) {
 	Table_numericize_Assert (me, columnNumber);
 	for (long irow = 1; irow <= my rows.size; irow ++) {
 		TableRow row = my rows.at [irow];
-		if (row -> cells [columnNumber]. number == NUMundefined)
+		if (isundef (row -> cells [columnNumber]. number))
 			Melder_throw (me, U": the cell in row ", irow,
 				U" of column \"", my columnHeaders [columnNumber]. label ? my columnHeaders [columnNumber]. label : Melder_integer (columnNumber),
 				U"\" is undefined.");
@@ -492,13 +492,13 @@ double Table_getMean (Table me, long columnNumber) {
 		Table_checkSpecifiedColumnNumberWithinRange (me, columnNumber);
 		Table_numericize_checkDefined (me, columnNumber);
 		if (my rows.size < 1)
-			return NUMundefined;
-		double sum = 0.0;
+			return undefined;
+		real80 sum = 0.0;
 		for (long irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
 			sum += row -> cells [columnNumber]. number;
 		}
-		return sum / my rows.size;
+		return (real) sum / my rows.size;
 	} catch (MelderError) {
 		Melder_throw (me, U": cannot compute mean of column ", columnNumber, U".");
 	}
@@ -509,7 +509,7 @@ double Table_getMaximum (Table me, long columnNumber) {
 		Table_checkSpecifiedColumnNumberWithinRange (me, columnNumber);
 		Table_numericize_checkDefined (me, columnNumber);
 		if (my rows.size < 1)
-			return NUMundefined;
+			return undefined;
 		TableRow firstRow = my rows.at [1];
 		double maximum = firstRow -> cells [columnNumber]. number;
 		for (long irow = 2; irow <= my rows.size; irow ++) {
@@ -528,7 +528,7 @@ double Table_getMinimum (Table me, long columnNumber) {
 		Table_checkSpecifiedColumnNumberWithinRange (me, columnNumber);
 		Table_numericize_checkDefined (me, columnNumber);
 		if (my rows.size < 1)
-			return NUMundefined;
+			return undefined;
 		TableRow firstRow = my rows.at [1];
 		double minimum = firstRow -> cells [columnNumber]. number;
 		for (long irow = 2; irow <= my rows.size; irow ++) {
@@ -547,7 +547,7 @@ double Table_getGroupMean (Table me, long columnNumber, long groupColumnNumber, 
 		Table_checkSpecifiedColumnNumberWithinRange (me, columnNumber);
 		Table_numericize_checkDefined (me, columnNumber);
 		long n = 0;
-		double sum = 0.0;
+		real80 sum = 0.0;
 		for (long irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
 			if (Melder_equ (row -> cells [groupColumnNumber]. string, group)) {
@@ -555,8 +555,8 @@ double Table_getGroupMean (Table me, long columnNumber, long groupColumnNumber, 
 				sum += row -> cells [columnNumber]. number;
 			}
 		}
-		if (n < 1) return NUMundefined;
-		double mean = sum / n;
+		if (n < 1) return undefined;
+		real mean = (real) sum / n;
 		return mean;
 	} catch (MelderError) {
 		Melder_throw (me, U": cannot compute mean of column ", columnNumber, U" for group \"", group, U"\" of column ", groupColumnNumber, U".");
@@ -568,7 +568,7 @@ double Table_getQuantile (Table me, long columnNumber, double quantile) {
 		Table_checkSpecifiedColumnNumberWithinRange (me, columnNumber);
 		Table_numericize_checkDefined (me, columnNumber);
 		if (my rows.size < 1)
-			return NUMundefined;
+			return undefined;
 		autoNUMvector <double> sortingColumn (1, my rows.size);
 		for (long irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
@@ -585,14 +585,14 @@ double Table_getStdev (Table me, long columnNumber) {
 	try {
 		double mean = Table_getMean (me, columnNumber);   // already checks for columnNumber and undefined cells
 		if (my rows.size < 2)
-			return NUMundefined;
-		double sum = 0.0;
+			return undefined;
+		real80 sum = 0.0;
 		for (long irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
 			double d = row -> cells [columnNumber]. number - mean;
 			sum += d * d;
 		}
-		return sqrt (sum / (my rows.size - 1));
+		return sqrt ((real) sum / (my rows.size - 1));
 	} catch (MelderError) {
 		Melder_throw (me, U": cannot compute the standard deviation of column ", columnNumber, U".");
 	}
@@ -604,7 +604,7 @@ long Table_drawRowFromDistribution (Table me, long columnNumber) {
 		Table_numericize_checkDefined (me, columnNumber);
 		if (my rows.size < 1)
 			Melder_throw (me, U": no rows.");
-		double total = 0.0;
+		real80 total = 0.0;
 		for (long irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
 			total += row -> cells [columnNumber]. number;
@@ -613,7 +613,8 @@ long Table_drawRowFromDistribution (Table me, long columnNumber) {
 			Melder_throw (me, U": the total weight of column ", columnNumber, U" is not positive.");
 		long irow;
 		do {
-			double rand = NUMrandomUniform (0, total), sum = 0.0;
+			double rand = NUMrandomUniform (0, (real) total);
+			real80 sum = 0.0;
 			for (irow = 1; irow <= my rows.size; irow ++) {
 				TableRow row = my rows.at [irow];
 				sum += row -> cells [columnNumber]. number;
@@ -1296,7 +1297,7 @@ void Table_appendQuotientColumn (Table me, long column1, long column2, const cha
 		autoTable thee = Table_createWithoutColumnNames (my rows.size, 1);
 		for (long irow = 1; irow <= my rows.size; irow ++) {
 			TableRow myRow = my rows.at [irow];
-			double value = myRow -> cells [column2]. number == 0.0 ? NUMundefined :
+			double value = myRow -> cells [column2]. number == 0.0 ? undefined :
 				myRow -> cells [column1]. number / myRow -> cells [column2]. number;
 			Table_setNumericValue (thee.get(), irow, 1, value);
 		}
@@ -1326,9 +1327,9 @@ void Table_formula_columnRange (Table me, long fromColumn, long toColumn, const 
 		Table_checkSpecifiedColumnNumberWithinRange (me, fromColumn);
 		Table_checkSpecifiedColumnNumberWithinRange (me, toColumn);
 		Formula_compile (interpreter, me, expression, kFormula_EXPRESSION_TYPE_UNKNOWN, true);
-		for (long irow = 1; irow <= my rows.size; irow ++) {
-			for (long icol = fromColumn; icol <= toColumn; icol ++) {
-				struct Formula_Result result;
+		for (integer irow = 1; irow <= my rows.size; irow ++) {
+			for (integer icol = fromColumn; icol <= toColumn; icol ++) {
+				Formula_Result result;
 				Formula_run (irow, icol, & result);
 				if (result. expressionType == kFormula_EXPRESSION_TYPE_STRING) {
 					Table_setStringValue (me, irow, icol, result. result.stringResult);
@@ -1359,12 +1360,12 @@ double Table_getCorrelation_pearsonR (Table me, long column1, long column2, doub
 	long n = my rows.size, irow;
 	double correlation;
 	double sum1 = 0.0, sum2 = 0.0, sum12 = 0.0, sum11 = 0.0, sum22 = 0.0, mean1, mean2;
-	if (out_significance) *out_significance = NUMundefined;
-	if (out_lowerLimit) *out_lowerLimit = NUMundefined;
-	if (out_upperLimit) *out_upperLimit = NUMundefined;
-	if (column1 < 1 || column1 > my numberOfColumns) return NUMundefined;
-	if (column2 < 1 || column2 > my numberOfColumns) return NUMundefined;
-	if (n < 2) return NUMundefined;
+	if (out_significance) *out_significance = undefined;
+	if (out_lowerLimit) *out_lowerLimit = undefined;
+	if (out_upperLimit) *out_upperLimit = undefined;
+	if (column1 < 1 || column1 > my numberOfColumns) return undefined;
+	if (column2 < 1 || column2 > my numberOfColumns) return undefined;
+	if (n < 2) return undefined;
 	Table_numericize_Assert (me, column1);
 	Table_numericize_Assert (me, column2);
 	for (irow = 1; irow <= n; irow ++) {
@@ -1381,12 +1382,12 @@ double Table_getCorrelation_pearsonR (Table me, long column1, long column2, doub
 		sum11 += d1 * d1;
 		sum22 += d2 * d2;
 	}
-	correlation = sum11 == 0.0 || sum22 == 0.0 ? NUMundefined : sum12 / sqrt (sum11 * sum22);
-	if (out_significance && NUMdefined (correlation) && n >= 3)
+	correlation = sum11 == 0.0 || sum22 == 0.0 ? undefined : sum12 / sqrt (sum11 * sum22);
+	if (out_significance && isdefined (correlation) && n >= 3)
 		*out_significance = fabs (correlation) == 1.0 ? 0.0 :
 			/* One-sided: */
 			NUMstudentQ (fabs (correlation) * sqrt ((n - 2) / (1 - correlation * correlation)), n - 2);
-	if ((out_lowerLimit || out_upperLimit) && NUMdefined (correlation) && n >= 4) {
+	if ((out_lowerLimit || out_upperLimit) && isdefined (correlation) && n >= 4) {
 		if (fabs (correlation) == 1.0) {
 			if (out_lowerLimit) *out_lowerLimit = correlation;
 			if (out_upperLimit) *out_upperLimit = correlation;
@@ -1408,11 +1409,11 @@ double Table_getCorrelation_kendallTau (Table me, long column1, long column2, do
 	long n = my rows.size, irow, jrow;
 	double correlation, denominator;
 	long numberOfConcordants = 0, numberOfDiscordants = 0, numberOfExtra1 = 0, numberOfExtra2 = 0;
-	if (out_significance) *out_significance = NUMundefined;
-	if (out_lowerLimit) *out_lowerLimit = NUMundefined;
-	if (out_upperLimit) *out_upperLimit = NUMundefined;
-	if (column1 < 1 || column1 > my numberOfColumns) return NUMundefined;
-	if (column2 < 1 || column2 > my numberOfColumns) return NUMundefined;
+	if (out_significance) *out_significance = undefined;
+	if (out_lowerLimit) *out_lowerLimit = undefined;
+	if (out_upperLimit) *out_upperLimit = undefined;
+	if (column1 < 1 || column1 > my numberOfColumns) return undefined;
+	if (column2 < 1 || column2 > my numberOfColumns) return undefined;
 	Table_numericize_Assert (me, column1);
 	Table_numericize_Assert (me, column2);
 	for (irow = 1; irow < n; irow ++) {
@@ -1435,8 +1436,8 @@ double Table_getCorrelation_kendallTau (Table me, long column1, long column2, do
 	}
 	denominator = sqrt ((numberOfConcordants + numberOfDiscordants + numberOfExtra1) *
 		(numberOfConcordants + numberOfDiscordants + numberOfExtra2));
-	correlation = denominator == 0.0 ? NUMundefined : (numberOfConcordants - numberOfDiscordants) / denominator;
-	if ((out_significance || out_lowerLimit || out_upperLimit) && NUMdefined (correlation) && n >= 2) {
+	correlation = denominator == 0.0 ? undefined : (numberOfConcordants - numberOfDiscordants) / denominator;
+	if ((out_significance || out_lowerLimit || out_upperLimit) && isdefined (correlation) && n >= 2) {
 		double standardError = sqrt ((4 * n + 10.0) / (9 * n * (n - 1)));
 		if (out_significance)
 			*out_significance = NUMgaussQ (fabs (correlation) / standardError);   // one-sided
@@ -1451,33 +1452,33 @@ double Table_getCorrelation_kendallTau (Table me, long column1, long column2, do
 double Table_getDifference_studentT (Table me, long column1, long column2, double significanceLevel,
 	double *out_t, double *out_numberOfDegreesOfFreedom, double *out_significance, double *out_lowerLimit, double *out_upperLimit)
 {
-	if (out_t) *out_t = NUMundefined;
-	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = NUMundefined;
-	if (out_significance) *out_significance = NUMundefined;
-	if (out_lowerLimit) *out_lowerLimit = NUMundefined;
-	if (out_upperLimit) *out_upperLimit = NUMundefined;
-	long n = my rows.size;
-	if (n < 1) return NUMundefined;
-	if (column1 < 1 || column1 > my numberOfColumns) return NUMundefined;
-	if (column2 < 1 || column2 > my numberOfColumns) return NUMundefined;
+	if (out_t) *out_t = undefined;
+	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = undefined;
+	if (out_significance) *out_significance = undefined;
+	if (out_lowerLimit) *out_lowerLimit = undefined;
+	if (out_upperLimit) *out_upperLimit = undefined;
+	integer n = my rows.size;
+	if (n < 1) return undefined;
+	if (column1 < 1 || column1 > my numberOfColumns) return undefined;
+	if (column2 < 1 || column2 > my numberOfColumns) return undefined;
 	Table_numericize_Assert (me, column1);
 	Table_numericize_Assert (me, column2);
-	double sum = 0.0;
-	for (long irow = 1; irow <= n; irow ++) {
+	real80 sum = 0.0;
+	for (integer irow = 1; irow <= n; irow ++) {
 		TableRow row = my rows.at [irow];
 		sum += row -> cells [column1]. number - row -> cells [column2]. number;
 	}
-	double meanDifference = sum / n;
-	long degreesOfFreedom = n - 1;
+	real meanDifference = (real) sum / n;
+	integer degreesOfFreedom = n - 1;
 	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = degreesOfFreedom;
 	if (degreesOfFreedom >= 1 && (out_t || out_significance || out_lowerLimit || out_upperLimit)) {
-		double sumOfSquares = 0.0;
-		for (long irow = 1; irow <= n; irow ++) {
+		real80 sumOfSquares = 0.0;
+		for (integer irow = 1; irow <= n; irow ++) {
 			TableRow row = my rows.at [irow];
-			double diff = (row -> cells [column1]. number - row -> cells [column2]. number) - meanDifference;
+			real diff = (row -> cells [column1]. number - row -> cells [column2]. number) - meanDifference;
 			sumOfSquares += diff * diff;
 		}
-		double standardError = sqrt (sumOfSquares / degreesOfFreedom / n);
+		real standardError = sqrt ((real) sumOfSquares / degreesOfFreedom / n);
 		if (out_t && standardError != 0.0 ) *out_t = meanDifference / standardError;
 		if (out_significance) *out_significance =
 			standardError == 0.0 ? 0.0 : NUMstudentQ (fabs (meanDifference) / standardError, degreesOfFreedom);
@@ -1492,30 +1493,31 @@ double Table_getDifference_studentT (Table me, long column1, long column2, doubl
 double Table_getMean_studentT (Table me, long column, double significanceLevel,
 	double *out_tFromZero, double *out_numberOfDegreesOfFreedom, double *out_significanceFromZero, double *out_lowerLimit, double *out_upperLimit)
 {
-	double mean = 0.0, var = 0.0, standardError;
-	long n = my rows.size;
-	if (out_tFromZero) *out_tFromZero = NUMundefined;
-	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = NUMundefined;
-	if (out_significanceFromZero) *out_significanceFromZero = NUMundefined;
-	if (out_lowerLimit) *out_lowerLimit = NUMundefined;
-	if (out_upperLimit) *out_upperLimit = NUMundefined;
-	if (n < 1) return NUMundefined;
-	if (column < 1 || column > my numberOfColumns) return NUMundefined;
-	long degreesOfFreedom = n - 1;
+	integer n = my rows.size;
+	if (out_tFromZero) *out_tFromZero = undefined;
+	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = undefined;
+	if (out_significanceFromZero) *out_significanceFromZero = undefined;
+	if (out_lowerLimit) *out_lowerLimit = undefined;
+	if (out_upperLimit) *out_upperLimit = undefined;
+	if (n < 1) return undefined;
+	if (column < 1 || column > my numberOfColumns) return undefined;
+	integer degreesOfFreedom = n - 1;
 	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = degreesOfFreedom;
 	Table_numericize_Assert (me, column);
-	for (long irow = 1; irow <= n; irow ++) {
+	real80 sum = 0.0;
+	for (integer irow = 1; irow <= n; irow ++) {
 		TableRow row = my rows.at [irow];
-		mean += row -> cells [column]. number;
+		sum += row -> cells [column]. number;
 	}
-	mean /= n;
+	real mean = real (sum / n);
 	if (n >= 2 && (out_tFromZero || out_significanceFromZero || out_lowerLimit || out_upperLimit)) {
-		for (long irow = 1; irow <= n; irow ++) {
+		real80 sumOfSquares = 0.0;
+		for (integer irow = 1; irow <= n; irow ++) {
 			TableRow row = my rows.at [irow];
-			double diff = row -> cells [column]. number - mean;
-			var += diff * diff;
+			real diff = row -> cells [column]. number - mean;
+			sumOfSquares += diff * diff;
 		}
-		standardError = sqrt (var / degreesOfFreedom / n);
+		real standardError = sqrt ((real) sumOfSquares / degreesOfFreedom / n);
 		if (out_tFromZero && standardError != 0.0 ) *out_tFromZero = mean / standardError;
 		if (out_significanceFromZero) *out_significanceFromZero =
 			standardError == 0.0 ? 0.0 : NUMstudentQ (fabs (mean) / standardError, degreesOfFreedom);
@@ -1530,16 +1532,16 @@ double Table_getMean_studentT (Table me, long column, double significanceLevel,
 double Table_getGroupMean_studentT (Table me, long column, long groupColumn, const char32 *group, double significanceLevel,
 	double *out_tFromZero, double *out_numberOfDegreesOfFreedom, double *out_significanceFromZero, double *out_lowerLimit, double *out_upperLimit)
 {
-	if (out_tFromZero) *out_tFromZero = NUMundefined;
-	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = NUMundefined;
-	if (out_significanceFromZero) *out_significanceFromZero = NUMundefined;
-	if (out_lowerLimit) *out_lowerLimit = NUMundefined;
-	if (out_upperLimit) *out_upperLimit = NUMundefined;
-	if (column < 1 || column > my numberOfColumns) return NUMundefined;
+	if (out_tFromZero) *out_tFromZero = undefined;
+	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = undefined;
+	if (out_significanceFromZero) *out_significanceFromZero = undefined;
+	if (out_lowerLimit) *out_lowerLimit = undefined;
+	if (out_upperLimit) *out_upperLimit = undefined;
+	if (column < 1 || column > my numberOfColumns) return undefined;
 	Table_numericize_Assert (me, column);
-	long n = 0;
-	double sum = 0.0;
-	for (long irow = 1; irow <= my rows.size; irow ++) {
+	integer n = 0;
+	real80 sum = 0.0;
+	for (integer irow = 1; irow <= my rows.size; irow ++) {
 		TableRow row = my rows.at [irow];
 		if (row -> cells [groupColumn]. string) {
 			if (str32equ (row -> cells [groupColumn]. string, group)) {
@@ -1548,22 +1550,22 @@ double Table_getGroupMean_studentT (Table me, long column, long groupColumn, con
 			}
 		}
 	}
-	if (n < 1) return NUMundefined;
-	double mean = sum / n;
-	long degreesOfFreedom = n - 1;
+	if (n < 1) return undefined;
+	real mean = (real) sum / n;
+	integer degreesOfFreedom = n - 1;
 	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = degreesOfFreedom;
 	if (degreesOfFreedom >= 1 && (out_tFromZero || out_significanceFromZero || out_lowerLimit || out_upperLimit)) {
-		double sumOfSquares = 0.0;
-		for (long irow = 1; irow <= my rows.size; irow ++) {
+		real80 sumOfSquares = 0.0;
+		for (integer irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
 			if (row -> cells [groupColumn]. string) {
 				if (str32equ (row -> cells [groupColumn]. string, group)) {
-					double diff = row -> cells [column]. number - mean;
+					real diff = row -> cells [column]. number - mean;
 					sumOfSquares += diff * diff;
 				}
 			}
 		}
-		double standardError = sqrt (sumOfSquares / degreesOfFreedom / n);
+		real standardError = sqrt ((real) sumOfSquares / degreesOfFreedom / n);
 		if (out_tFromZero && standardError != 0.0 ) *out_tFromZero = mean / standardError;
 		if (out_significanceFromZero) *out_significanceFromZero =
 			standardError == 0.0 ? 0.0 : NUMstudentQ (fabs (mean) / standardError, degreesOfFreedom);
@@ -1578,17 +1580,17 @@ double Table_getGroupMean_studentT (Table me, long column, long groupColumn, con
 double Table_getGroupDifference_studentT (Table me, long column, long groupColumn, const char32 *group1, const char32 *group2, double significanceLevel,
 	double *out_tFromZero, double *out_numberOfDegreesOfFreedom, double *out_significanceFromZero, double *out_lowerLimit, double *out_upperLimit)
 {
-	if (out_tFromZero) *out_tFromZero = NUMundefined;
-	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = NUMundefined;
-	if (out_significanceFromZero) *out_significanceFromZero = NUMundefined;
-	if (out_lowerLimit) *out_lowerLimit = NUMundefined;
-	if (out_upperLimit) *out_upperLimit = NUMundefined;
-	if (column < 1 || column > my numberOfColumns) return NUMundefined;
-	if (groupColumn < 1 || groupColumn > my numberOfColumns) return NUMundefined;
+	if (out_tFromZero) *out_tFromZero = undefined;
+	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = undefined;
+	if (out_significanceFromZero) *out_significanceFromZero = undefined;
+	if (out_lowerLimit) *out_lowerLimit = undefined;
+	if (out_upperLimit) *out_upperLimit = undefined;
+	if (column < 1 || column > my numberOfColumns) return undefined;
+	if (groupColumn < 1 || groupColumn > my numberOfColumns) return undefined;
 	Table_numericize_Assert (me, column);
-	long n1 = 0, n2 = 0;
-	double sum1 = 0.0, sum2 = 0.0;
-	for (long irow = 1; irow <= my rows.size; irow ++) {
+	integer n1 = 0, n2 = 0;
+	real80 sum1 = 0.0, sum2 = 0.0;
+	for (integer irow = 1; irow <= my rows.size; irow ++) {
 		TableRow row = my rows.at [irow];
 		if (row -> cells [groupColumn]. string) {
 			if (str32equ (row -> cells [groupColumn]. string, group1)) {
@@ -1600,27 +1602,27 @@ double Table_getGroupDifference_studentT (Table me, long column, long groupColum
 			}
 		}
 	}
-	if (n1 < 1 || n2 < 1) return NUMundefined;
-	long degreesOfFreedom = n1 + n2 - 2;
+	if (n1 < 1 || n2 < 1) return undefined;
+	integer degreesOfFreedom = n1 + n2 - 2;
 	if (out_numberOfDegreesOfFreedom) *out_numberOfDegreesOfFreedom = degreesOfFreedom;
-	double mean1 = sum1 / n1;
-	double mean2 = sum2 / n2;
-	double difference = mean1 - mean2;
+	real mean1 = (real) sum1 / n1;
+	real mean2 = (real) sum2 / n2;
+	real difference = mean1 - mean2;
 	if (degreesOfFreedom >= 1 && (out_tFromZero || out_significanceFromZero || out_lowerLimit || out_upperLimit)) {
-		double sumOfSquares = 0.0;
-		for (long irow = 1; irow <= my rows.size; irow ++) {
+		real80 sumOfSquares = 0.0;
+		for (integer irow = 1; irow <= my rows.size; irow ++) {
 			TableRow row = my rows.at [irow];
 			if (row -> cells [groupColumn]. string) {
 				if (str32equ (row -> cells [groupColumn]. string, group1)) {
-					double diff = row -> cells [column]. number - mean1;
+					real diff = row -> cells [column]. number - mean1;
 					sumOfSquares += diff * diff;
 				} else if (str32equ (row -> cells [groupColumn]. string, group2)) {
-					double diff = row -> cells [column]. number - mean2;
+					real diff = row -> cells [column]. number - mean2;
 					sumOfSquares += diff * diff;
 				}
 			}
 		}
-		double standardError = sqrt (sumOfSquares / degreesOfFreedom * (1.0 / n1 + 1.0 / n2));
+		real standardError = sqrt ((real) sumOfSquares / degreesOfFreedom * (1.0 / n1 + 1.0 / n2));
 		if (out_tFromZero && standardError != 0.0 ) *out_tFromZero = difference / standardError;
 		if (out_significanceFromZero) *out_significanceFromZero =
 			standardError == 0.0 ? 0.0 : NUMstudentQ (fabs (difference) / standardError, degreesOfFreedom);
@@ -1635,13 +1637,13 @@ double Table_getGroupDifference_studentT (Table me, long column, long groupColum
 double Table_getGroupDifference_wilcoxonRankSum (Table me, long column, long groupColumn, const char32 *group1, const char32 *group2,
 	double *out_rankSum, double *out_significanceFromZero)
 {
-	if (out_rankSum) *out_rankSum = NUMundefined;
-	if (out_significanceFromZero) *out_significanceFromZero = NUMundefined;
-	if (column < 1 || column > my numberOfColumns) return NUMundefined;
-	if (groupColumn < 1 || groupColumn > my numberOfColumns) return NUMundefined;
+	if (out_rankSum) *out_rankSum = undefined;
+	if (out_significanceFromZero) *out_significanceFromZero = undefined;
+	if (column < 1 || column > my numberOfColumns) return undefined;
+	if (groupColumn < 1 || groupColumn > my numberOfColumns) return undefined;
 	Table_numericize_Assert (me, column);
-	long n1 = 0, n2 = 0;
-	for (long irow = 1; irow <= my rows.size; irow ++) {
+	integer n1 = 0, n2 = 0;
+	for (integer irow = 1; irow <= my rows.size; irow ++) {
 		TableRow row = my rows.at [irow];
 		if (row -> cells [groupColumn]. string) {
 			if (str32equ (row -> cells [groupColumn]. string, group1)) {
@@ -1651,10 +1653,10 @@ double Table_getGroupDifference_wilcoxonRankSum (Table me, long column, long gro
 			}
 		}
 	}
-	long n = n1 + n2;
-	if (n1 < 1 || n2 < 1 || n < 3) return NUMundefined;
+	integer n = n1 + n2;
+	if (n1 < 1 || n2 < 1 || n < 3) return undefined;
 	autoTable ranks = Table_createWithoutColumnNames (n, 3);   // column 1 = group, 2 = value, 3 = rank
-	for (long irow = 1, jrow = 0; irow <= my rows.size; irow ++) {
+	for (integer irow = 1, jrow = 0; irow <= my rows.size; irow ++) {
 		TableRow row = my rows.at [irow];
 		if (row -> cells [groupColumn]. string) {
 			if (str32equ (row -> cells [groupColumn]. string, group1)) {
@@ -1669,10 +1671,10 @@ double Table_getGroupDifference_wilcoxonRankSum (Table me, long column, long gro
 	Table_numericize_Assert (ranks.get(), 1);
 	Table_numericize_Assert (ranks.get(), 2);
 	Table_numericize_Assert (ranks.get(), 3);
-	long columns [1+1] = { 0, 2 };   // we're gonna sort by column 2
+	integer columns [1+1] = { 0, 2 };   // we're gonna sort by column 2
 	Table_sortRows_Assert (ranks.get(), columns, 1);   // we sort by one column only
 	double totalNumberOfTies3 = 0.0;
-	for (long irow = 1; irow <= ranks -> rows.size; irow ++) {
+	for (integer irow = 1; irow <= ranks -> rows.size; irow ++) {
 		TableRow row = ranks -> rows.at [irow];
 		double value = row -> cells [2]. number;
 		long rowOfLastTie = irow + 1;
@@ -1683,23 +1685,24 @@ double Table_getGroupDifference_wilcoxonRankSum (Table me, long column, long gro
 		}
 		rowOfLastTie --;
 		double averageRank = 0.5 * ((double) irow + (double) rowOfLastTie);
-		for (long jrow = irow; jrow <= rowOfLastTie; jrow ++) {
+		for (integer jrow = irow; jrow <= rowOfLastTie; jrow ++) {
 			Table_setNumericValue (ranks.get(), jrow, 3, averageRank);
 		}
 		long numberOfTies = rowOfLastTie - irow + 1;
 		totalNumberOfTies3 += (double) (numberOfTies - 1) * (double) numberOfTies * (double) (numberOfTies + 1);
 	}
 	Table_numericize_Assert (ranks.get(), 3);
-	double maximumRankSum = (double) n1 * (double) n2, rankSum = 0.0;
-	for (long irow = 1; irow <= ranks -> rows.size; irow ++) {
+	double maximumRankSum = (double) n1 * (double) n2;
+	real80 rankSum = 0.0;
+	for (integer irow = 1; irow <= ranks -> rows.size; irow ++) {
 		TableRow row = ranks -> rows.at [irow];
 		if (row -> cells [1]. number == 1.0) rankSum += row -> cells [3]. number;
 	}
 	rankSum -= 0.5 * (double) n1 * ((double) n1 + 1.0);
 	double stdev = sqrt (maximumRankSum * ((double) n + 1.0 - totalNumberOfTies3 / n / (n - 1)) / 12.0);
-	if (out_rankSum) *out_rankSum = rankSum;
-	if (out_significanceFromZero) *out_significanceFromZero = NUMgaussQ (fabs (rankSum - 0.5 * maximumRankSum) / stdev);
-	return rankSum / maximumRankSum;
+	if (out_rankSum) *out_rankSum = (real) rankSum;
+	if (out_significanceFromZero) *out_significanceFromZero = NUMgaussQ (fabs ((real) rankSum - 0.5 * maximumRankSum) / stdev);
+	return (real) rankSum / maximumRankSum;
 }
 
 double Table_getFisherF (Table me, long col1, long col2);
@@ -1708,14 +1711,14 @@ double Table_getFisherFLowerLimit (Table me, long col1, long col2, double signif
 double Table_getFisherFUpperLimit (Table me, long col1, long col2, double significanceLevel);
 
 bool Table_getExtrema (Table me, long icol, double *minimum, double *maximum) {
-	long n = my rows.size, irow;
+	integer n = my rows.size;
 	if (icol < 1 || icol > my numberOfColumns || n == 0) {
-		*minimum = *maximum = NUMundefined;
+		*minimum = *maximum = undefined;
 		return false;
 	}
 	Table_numericize_Assert (me, icol);
 	*minimum = *maximum = my rows.at [1] -> cells [icol]. number;
-	for (irow = 2; irow <= n; irow ++) {
+	for (integer irow = 2; irow <= n; irow ++) {
 		double value = my rows.at [irow] -> cells [icol]. number;
 		if (value < *minimum) *minimum = value;
 		if (value > *maximum) *maximum = value;
@@ -1726,7 +1729,6 @@ bool Table_getExtrema (Table me, long icol, double *minimum, double *maximum) {
 void Table_scatterPlot_mark (Table me, Graphics g, long xcolumn, long ycolumn,
 	double xmin, double xmax, double ymin, double ymax, double markSize_mm, const char32 *mark, int garnish)
 {
-	long n = my rows.size, irow;
 	if (xcolumn < 1 || xcolumn > my numberOfColumns || ycolumn < 1 || ycolumn > my numberOfColumns) return;
 	Table_numericize_Assert (me, xcolumn);
 	Table_numericize_Assert (me, ycolumn);
@@ -1742,7 +1744,8 @@ void Table_scatterPlot_mark (Table me, Graphics g, long xcolumn, long ycolumn,
 	Graphics_setWindow (g, xmin, xmax, ymin, ymax);
 
 	Graphics_setTextAlignment (g, Graphics_CENTRE, Graphics_HALF);
-	for (irow = 1; irow <= n; irow ++) {
+	integer n = my rows.size;
+	for (integer irow = 1; irow <= n; irow ++) {
 		TableRow row = my rows.at [irow];
 		Graphics_mark (g, row -> cells [xcolumn]. number, row -> cells [ycolumn]. number, markSize_mm, mark);
 	}
@@ -1761,7 +1764,6 @@ void Table_scatterPlot_mark (Table me, Graphics g, long xcolumn, long ycolumn,
 void Table_scatterPlot (Table me, Graphics g, long xcolumn, long ycolumn,
 	double xmin, double xmax, double ymin, double ymax, long markColumn, int fontSize, int garnish)
 {
-	long n = my rows.size;
 	int saveFontSize = Graphics_inqFontSize (g);
 	if (xcolumn < 1 || xcolumn > my numberOfColumns || ycolumn < 1 || ycolumn > my numberOfColumns) return;
 	Table_numericize_Assert (me, xcolumn);
@@ -1779,7 +1781,8 @@ void Table_scatterPlot (Table me, Graphics g, long xcolumn, long ycolumn,
 
 	Graphics_setTextAlignment (g, Graphics_CENTRE, Graphics_HALF);
 	Graphics_setFontSize (g, fontSize);
-	for (long irow = 1; irow <= n; irow ++) {
+	integer n = my rows.size;
+	for (integer irow = 1; irow <= n; irow ++) {
 		TableRow row = my rows.at [irow];
 		const char32 *mark = row -> cells [markColumn]. string;
 		if (mark)
@@ -1814,7 +1817,7 @@ void Table_drawEllipse_e (Table me, Graphics g, long xcolumn, long ycolumn,
 			if (ymin == ymax) ymin -= 0.5, ymax += 0.5;
 		}
 		autoTableOfReal tableOfReal = TableOfReal_create (my rows.size, 2);
-		for (long irow = 1; irow <= my rows.size; irow ++) {
+		for (integer irow = 1; irow <= my rows.size; irow ++) {
 			tableOfReal -> data [irow] [1] = Table_getNumericValue_Assert (me, irow, xcolumn);
 			tableOfReal -> data [irow] [2] = Table_getNumericValue_Assert (me, irow, ycolumn);
 		}
@@ -1835,18 +1838,18 @@ void Table_list (Table me, bool includeRowNumbers) {
 		MelderInfo_write (U"row");
 		if (my numberOfColumns > 0) MelderInfo_write (U"\t");
 	}
-	for (long icol = 1; icol <= my numberOfColumns; icol ++) {
+	for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
 		if (icol > 1) MelderInfo_write (U"\t");
 		MelderInfo_write (visibleString (my columnHeaders [icol]. label));
 	}
 	MelderInfo_write (U"\n");
-	for (long irow = 1; irow <= my rows.size; irow ++) {
+	for (integer irow = 1; irow <= my rows.size; irow ++) {
 		if (includeRowNumbers) {
 			MelderInfo_write (irow);
 			if (my numberOfColumns > 0) MelderInfo_write (U"\t");
 		}
 		TableRow row = my rows.at [irow];
-		for (long icol = 1; icol <= my numberOfColumns; icol ++) {
+		for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
 			if (icol > 1) MelderInfo_write (U"\t");
 			MelderInfo_write (visibleString (row -> cells [icol]. string));
 		}
@@ -1857,15 +1860,15 @@ void Table_list (Table me, bool includeRowNumbers) {
 
 static void _Table_writeToCharacterSeparatedFile (Table me, MelderFile file, char32 kar) {
 	autoMelderString buffer;
-	for (long icol = 1; icol <= my numberOfColumns; icol ++) {
+	for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
 		if (icol != 1) MelderString_appendCharacter (& buffer, kar);
 		char32 *s = my columnHeaders [icol]. label;
 		MelderString_append (& buffer, ( s && s [0] != U'\0' ? s : U"?" ));
 	}
 	MelderString_appendCharacter (& buffer, U'\n');
-	for (long irow = 1; irow <= my rows.size; irow ++) {
+	for (integer irow = 1; irow <= my rows.size; irow ++) {
 		TableRow row = my rows.at [irow];
-		for (long icol = 1; icol <= my numberOfColumns; icol ++) {
+		for (integer icol = 1; icol <= my numberOfColumns; icol ++) {
 			if (icol != 1) MelderString_appendCharacter (& buffer, kar);
 			char32 *s = row -> cells [icol]. string;
 			MelderString_append (& buffer, ( s && s [0] != U'\0' ? s : U"?" ));
@@ -1894,11 +1897,10 @@ void Table_writeToCommaSeparatedFile (Table me, MelderFile file) {
 autoTable Table_readFromTableFile (MelderFile file) {
 	try {
 		autostring32 string = MelderFile_readText (file);
-		long nrow, ncol, nelements;
 		/*
 		 * Count columns.
 		 */
-		ncol = 0;
+		integer ncol = 0;
 		char32 *p = & string [0];
 		for (;;) {
 			char32 kar = *p++;
@@ -1914,7 +1916,7 @@ autoTable Table_readFromTableFile (MelderFile file) {
 		 * Count elements.
 		 */
 		p = & string [0];
-		nelements = 0;
+		integer nelements = 0;
 		for (;;) {
 			char32 kar = *p++;
 			if (kar == U'\0') break;
@@ -1933,26 +1935,26 @@ autoTable Table_readFromTableFile (MelderFile file) {
 		/*
 		 * Create empty table.
 		 */
-		nrow = nelements / ncol - 1;
+		integer nrow = nelements / ncol - 1;
 		autoTable me = Table_create (nrow, ncol);
 
 		/*
 		 * Read elements.
 		 */
 		p = & string [0];
-		for (long icol = 1; icol <= ncol; icol ++) {
+		for (integer icol = 1; icol <= ncol; icol ++) {
 			while (*p == U' ' || *p == U'\t') { Melder_assert (*p != U'\0'); p ++; }
-			static MelderString buffer { 0 };
+			static MelderString buffer { };
 			MelderString_empty (& buffer);
 			while (*p != U' ' && *p != U'\t' && *p != U'\n') { MelderString_appendCharacter (& buffer, *p); p ++; }
 			Table_setColumnLabel (me.get(), icol, buffer.string);
 			MelderString_empty (& buffer);
 		}
-		for (long irow = 1; irow <= nrow; irow ++) {
+		for (integer irow = 1; irow <= nrow; irow ++) {
 			TableRow row = my rows.at [irow];
-			for (long icol = 1; icol <= ncol; icol ++) {
+			for (integer icol = 1; icol <= ncol; icol ++) {
 				while (*p == U' ' || *p == U'\t' || *p == U'\n') { Melder_assert (*p != U'\0'); p ++; }
-				static MelderString buffer { 0 };
+				static MelderString buffer { };
 				MelderString_empty (& buffer);
 				while (*p != U' ' && *p != U'\t' && *p != U'\n' && *p != U'\0') { MelderString_appendCharacter (& buffer, *p); p ++; }
 				row -> cells [icol]. string = Melder_dup_f (buffer.string);
@@ -1972,12 +1974,17 @@ autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 sepa
 		/*
 		 * Kill final new-line symbols.
 		 */
-		for (int64 length = str32len (string.peek()); length > 0 && string [length - 1] == U'\n'; length = str32len (string.peek())) string [length - 1] = U'\0';
+		for (int64 length = str32len (string.peek());
+		     length > 0 && string [length - 1] == U'\n';
+			 length = str32len (string.peek()))
+		{
+			string [length - 1] = U'\0';
+		}
 
 		/*
 		 * Count columns.
 		 */
-		long ncol = 1;
+		integer ncol = 1;
 		const char32 *p = & string [0];
 		for (;;) {
 			char32 kar = *p++;
@@ -1989,7 +1996,7 @@ autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 sepa
 		/*
 		 * Count rows.
 		 */
-		long nrow = 1;
+		integer nrow = 1;
 		for (;;) {
 			char32 kar = *p++;
 			if (kar == U'\0') break;
@@ -2006,7 +2013,7 @@ autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 sepa
 		 */
 		autoMelderString buffer;
 		p = & string [0];
-		for (long icol = 1; icol <= ncol; icol ++) {
+		for (integer icol = 1; icol <= ncol; icol ++) {
 			MelderString_empty (& buffer);
 			while (*p != separator && *p != U'\n') {
 				Melder_assert (*p != U'\0');
@@ -2020,9 +2027,9 @@ autoTable Table_readFromCharacterSeparatedTextFile (MelderFile file, char32 sepa
 		/*
 		 * Read cells.
 		 */
-		for (long irow = 1; irow <= nrow; irow ++) {
+		for (integer irow = 1; irow <= nrow; irow ++) {
 			TableRow row = my rows.at [irow];
-			for (long icol = 1; icol <= ncol; icol ++) {
+			for (integer icol = 1; icol <= ncol; icol ++) {
 				MelderString_empty (& buffer);
 				while (*p != separator && *p != U'\n' && *p != U'\0') {
 					MelderString_appendCharacter (& buffer, *p);
