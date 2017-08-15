@@ -18,5 +18,5 @@ before_install:
   - cp makefiles/makefile.defs.linux.pulse ./makefile.defs
 
 script:
-  - make
+  - make CC="gcc-4.8 -std=gnu99" CXX="g++-4.8 -std=c++11"
   - make test
