@@ -1,20 +1,23 @@
-a# = zero# (1000000)
-writeInfoLine: stdev (randomGauss# (a#, 0, 1))
+include ../test/more.proc
 
-for power from 1 to 18
-	a# = 10 ^ power - randomUniform (0, 1) +
-	... { 14.34629189464373, 7.23754354546, 13.645326754, 16.45342671345 }
-	appendInfoLine: power, " ", stdev (a#)
-endfor
+@no_plan()
 
-for power from 1 to 18
+for power to 18
+	a# = 10 ^ power + { 14.34629189464373, 7.23754354546, 13.645326754, 16.45342671345 }
+	if power > 11
+		@todo: 1, "rounding error"
+	endif
+	@is_approx: stdev(a#), 3.972229, 1e-6, "stdev"
+
 	a# = randomGauss# (a#, 1, 10 ^ - power)
-	stdev1 = stdev (a#)
+	stdev1 = stdev(a#)
 	Debug: "no", 48
-	stdev2 = stdev (a#)
+	stdev2 = stdev(a#)
 	Debug: "no", 49
-	stdev3 = stdev (a#)
+	stdev3 = stdev(a#)
 	Debug: "no", 0
-	appendInfoLine: stdev1, " ", stdev2, " ", stdev3
-	appendInfoLine: "... ", abs (stdev2 - stdev1), " ", abs (stdev3 - stdev1)
+	@is_approx: stdev1, stdev2, 1e-15, "plain v. 48"
+	@is_approx: stdev1, stdev3, 1e-15, "plain v. 49"
 endfor
+
+@done_testing()
