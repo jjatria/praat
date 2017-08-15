@@ -1,5 +1,7 @@
 # Praat: doing phonetics by computer
 
+![build badge][]
+
 Most information on how the program works is in its manual and on http://www.praat.org,
 which is also where you can download the latest binary executables from.
 
@@ -161,3 +163,4 @@ The meaning of the names of binary files available on GitHub is as follows:
 - `praatXXXX_linux_motif32.tar.gz`: gzipped tarred executable for 32-bit Linux (Motif)
 - `praatXXXX_solaris.tar.gz`: gzipped tarred executable for Solaris
 
+[build badge]: https://api.travis-ci.org/jjatria/praat.svg?branch=ci-testing
