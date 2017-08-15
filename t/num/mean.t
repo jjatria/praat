@@ -1,14 +1,21 @@
-writeInfoLine: "Mean..."
+include ../test/more.proc
+
+@no_plan()
+
+@diag: "Mean..."
 
 for i from 2 to 100
-	assert sum (linear# (1, i, i, 0)) = sum (linear# (1, i - 1, i - 1, 0)) + i
+        a = sum (linear# (1, i,     i,     0))
+        b = sum (linear# (1, i - 1, i - 1, 0)) + i
+	@is: a, b, "Sum comparison: i = 'i'"
 endfor
 
-n = 1e5+1
+n  = 1e5+1
 n7 = 7 * n
 d = 0
 ;d = 0.23456
 d = 0.000547462463
+
 big0 = 1 + d 
 sequenceA# = { 1, 2, 3, 4, 5, 6, 7 }
 meanA = mean (sequenceA#)
@@ -19,19 +26,34 @@ stdevB = stdev (sequenceB#)
 sequenceC# = { 0 }
 meanC = 0.0
 stdevC = 0.0
+
 Debug: "no", 48   ; naive mean
 big = big0
-for power from 1 to 25
+
+limit = 18 - log10(n)
+pass = 1
+
+for power to 25
 	big *= 10
 	a# = repeat# (big + sequenceA#, n)
 	mean1 = mean (a#)
 	dmean1 = mean1 - big - meanA
 	mean2 = a# [1] + mean (- a# [1] + a#)
 	dmean2 = mean2 - big - meanA
-	assert big <> round (big) or dmean2 = 0 or power > 18 - log10 (n)
+
 	mean3 = mean (a#) + mean (- mean1 + a#)
 	dmean3 = mean3 - big - meanA
-	assert big <> round (big) or dmean3 = 0 or power > 18 - log10 (n)
+
+	if    big == round(big) and dmean2 != 0 and power <= limit
+		pass = 0
+	elsif big == round(big) and dmean3 != 0 and power <= limit
+	        pass = 0
+	endif
+	
+	if !pass
+		@diag: "ERROR"
+	endif
+	
 	diffSquare1# = (- mean1 + a#) * (- mean1 + a#)
 	meanSquare1 = mean (diffSquare1#)
 	diffSquare2# = (- mean2 + a#) * (- mean2 + a#)
@@ -42,8 +64,14 @@ for power from 1 to 25
 	stdev1 = sqrt (meanSquare1 * n7 / (n7 - 1))
 	stdev2 = sqrt (meanSquare2 * n7 / (n7 - 1))
 	stdev3 = sqrt (meanSquare3 * n7 / (n7 - 1))
-	appendInfoLine: power, " mean: ", dmean1, " ", dmean2, " ", dmean3, " ; stdev: ", stdev1 - stdevA, " ", stdev2 - stdevA, " ", stdev3 - stdevA
+	
+	@diag: "'power' mean: 'dmean1' 'dmean2' 'dmean3' ; stdev: " +
+		... string$(stdev1 - stdevA) + " " +
+		... string$(stdev2 - stdevA) + " " +
+		... string$(stdev3 - stdevA)
 endfor
+@ok: pass, "dmean tests"
+
 Debug: "no", 0
 
 debug# = { 48, 49, 50, 51, 52, 0 }
@@ -54,64 +82,80 @@ debug$ [4] = "Chan pairwise"
 debug$ [5] = "Pairwise base case 8"
 debug$ [6] = "Pairwise base case 16"
 
-appendInfoLine: newline$, "OFFSET"
+@diag: newline$ + "OFFSET"
 for idebug from 1 to size (debug#)
-	appendInfoLine: newline$, debug$ [idebug]
-	Debug: "no", debug# [idebug]
+	@diag: newline$ + debug$[idebug] + newline$
+	
+	Debug: "no", debug#[idebug]
 	big = big0
 	for power from 1 to 25
 		big *= 10
 		a# = repeat# (big + sequenceA#, n)
 		b# = big + sequenceB#
 		c# = repeat# (big + sequenceC#, n7)
-		appendInfoLine: "Power ", power, ". Sawtooth: mean ", mean (a#) - big - meanA, ", stdev ", stdev (a#) - stdevA,
-		... ". Line: mean ", mean (b#) - big - meanB, ", stdev ", stdev (b#) - stdevB,
-		... ". Constant: mean ", mean (c#) - big - meanC, ", stdev ", stdev (c#) - stdevC
+		@diag: "Power: 'power'"
+		@diag: "  Sawtooth"
+		@diag: "    mean "    + string$(mean (a#) - big - meanA)
+		@diag: "    stdev "   + string$(stdev(a#) -       stdevA)
+		@diag: "  Line: " 
+		@diag: "    mean "    + string$(mean (b#) - big - meanB)
+		@diag: "    stdev "   + string$(stdev(b#) -       stdevB)
+		@diag: "  Constant: "
+		@diag: "    mean "    + string$(mean (c#) - big - meanC)
+		@diag: "    stdev "   + string$(stdev(c#) -       stdevC)
 	endfor
 	Debug: "no", 0
 endfor
 
-assert mean ({ -1e18, 3, 1e18 }) = 1
-assert mean ({ -1e19, 3, 1e19 }) = 1
-;assert mean ({ -1e20, 3, 1e20 }) = 1
+mean = mean ({ -1e18, 3, 1e18 })
+@is: mean, 1, "mean"
 
-for power from 1 to 16
-	assert (mean (repeat# (10^power + sequenceA#, n)) - 10^power = mean (sequenceA#))
+mean = mean ({ -1e19, 3, 1e19 })
+@is: mean, 1, "mean"
+
+@todo: 1, "Below threshold"
+mean = mean ({ -1e20, 3, 1e20 })
+@is: mean, 1, "mean"
+
+for power to 16
+	a = mean (repeat# (10^power + sequenceA#, n)) - 10^power
+	b = mean (sequenceA#)
+	@is: a, b, "power: 'power'"
 endfor
 
-appendInfoLine: newline$, "TIMING"
+@diag: newline$ + "TIMING" + newline$
 numberOfTrials = 100
 stopwatch
 for i to numberOfTrials
 	b# = a#
 endfor
-appendInfoLine: "Baseline: ", stopwatch / numberOfTrials / n7 * 1e9, " ns"
-for idebug from 1 to size (debug#)
-	Debug: "no", debug# [idebug]
+@diag: "Baseline: " + string$(stopwatch / numberOfTrials / n7 * 1e9) + " ns"
+for idebug from 1 to size(debug#)
+	Debug: "no", debug#[idebug]
 	stopwatch
 	for i to numberOfTrials
 		mean: a#
 	endfor
-	appendInfoLine: debug$ [idebug], " mean: ", stopwatch / numberOfTrials / n7 * 1e9, " ns"
+	@diag: debug$[idebug] + " mean: " + string$(stopwatch / numberOfTrials / n7 * 1e9) + " ns"
 endfor
 for idebug from 1 to size (debug#)
-	Debug: "no", debug# [idebug]
+	Debug: "no", debug#[idebug]
 	stopwatch
 	for i to numberOfTrials
 		stdev: a#
 	endfor
-	appendInfoLine: debug$ [idebug], " stdev: ", stopwatch / numberOfTrials / n7 * 1e9, " ns"
+	@diag: debug$[idebug] + " stdev: " + string$(stopwatch / numberOfTrials / n7 * 1e9) + " ns"
 endfor
 
-appendInfoLine: newline$, "ONE PEAK"
+@diag: newline$ + "ONE PEAK" + newline$
 procedure do_single_peak: peakLocation, zeroLocation
 	a# = d + repeat# ({ 1e13+1e5 }, 1e6 + 2)
 	a# [peakLocation] = d + (-1e19-1e11)
 	a# [zeroLocation] = d
-	appendInfoLine: debug$ [idebug], ": ", mean (a#) - d, " ", mean (a#) + mean (- mean (a#) + a#) - d
+	@diag: debug$[idebug] + ": " + string$(mean (a#) - d) + " " + string$(mean (a#) + mean (- mean (a#) + a#) - d)
 endproc
-for idebug from 1 to size (debug#)
-	Debug: "no", debug# [idebug]
+for idebug to size(debug#)
+	Debug: "no", debug#[idebug]
 	@do_single_peak: 1, 2
 	@do_single_peak: 2, 1
 	@do_single_peak: 2, 3
@@ -119,4 +163,4 @@ for idebug from 1 to size (debug#)
 	@do_single_peak: 1e6+1, 1e6+2
 endfor
 
-appendInfoLine: newline$, "OK"
+@done_testing()
